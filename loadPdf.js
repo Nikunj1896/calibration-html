@@ -37,9 +37,12 @@ const init = () => {
   let isDrawing = false;
   let drawMode = false;
   let line, points;
+  let isDragging = false;
+  let lastPosX, lastPosY;
 
   const bg = canvasEl.toDataURL("image/png");
   const fabricCanvas = new fabric.Canvas("pdfcanvas");
+  fabricCanvas.selection = false;
 
   // * Print PDF into canvas as Image
   fabric.Image.fromURL(bg, function (img) {
@@ -66,52 +69,74 @@ const init = () => {
 
   // * Draw line mouse down Event
   fabricCanvas.on("mouse:down", function (o) {
-    if (!drawMode) return;
-    isDrawing = true;
-    var pointer = fabricCanvas.getPointer(o.e);
-    points = [pointer.x, pointer.y, pointer.x, pointer.y];
-    line = new fabric.Line(points, {
-      strokeWidth: 2,
-      fill: "red",
-      stroke: "red",
-      originX: "center",
-      originY: "center",
-      selectable: false,
-      evented: false,
-    });
-    fabricCanvas.add(line);
+    if (drawMode) {
+      isDrawing = true;
+      var pointer = fabricCanvas.getPointer(o.e);
+      points = [pointer.x, pointer.y, pointer.x, pointer.y];
+      line = new fabric.Line(points, {
+        strokeWidth: 2,
+        fill: "red",
+        stroke: "red",
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+      });
+      fabricCanvas.add(line);
+    } else {
+      var evt = o.e;
+      isDragging = true;
+      fabricCanvas.selection = false;
+      lastPosX = evt.clientX;
+      lastPosY = evt.clientY;
+    }
   });
 
   // *  Draw Line with shift key for straight line
   fabricCanvas.on("mouse:move", function (o) {
-    if (!isDrawing) return;
-    var pointer = fabricCanvas.getPointer(o.e);
-    var shiftPressed = o.e.shiftKey; // Check if Shift key is pressed
-    if (shiftPressed) {
-      // Draw straight lines horizontally or vertically
-      var dx = Math.abs(pointer.x - points[0]);
-      var dy = Math.abs(pointer.y - points[1]);
-      if (dx > dy) {
-        points[2] = pointer.x;
-        points[3] = points[1];
+    // * Draw Line
+    if (isDrawing) {
+      var pointer = fabricCanvas.getPointer(o.e);
+      var shiftPressed = o.e.shiftKey; // Check if Shift key is pressed
+      if (shiftPressed) {
+        // Draw straight lines horizontally or vertically
+        var dx = Math.abs(pointer.x - points[0]);
+        var dy = Math.abs(pointer.y - points[1]);
+        if (dx > dy) {
+          points[2] = pointer.x;
+          points[3] = points[1];
+        } else {
+          points[2] = points[0];
+          points[3] = pointer.y;
+        }
       } else {
-        points[2] = points[0];
+        // Draw freely
+        points[2] = pointer.x;
         points[3] = pointer.y;
       }
-    } else {
-      // Draw freely
-      points[2] = pointer.x;
-      points[3] = pointer.y;
+      line.set({
+        x2: points[2],
+        y2: points[3],
+      });
+      fabricCanvas.renderAll();
     }
-    line.set({
-      x2: points[2],
-      y2: points[3],
-    });
-    fabricCanvas.renderAll();
+
+    // * Move Canvas
+    if (isDragging) {
+      var e = o.e;
+      var vpt = fabricCanvas.viewportTransform;
+      vpt[4] += e.clientX - lastPosX;
+      vpt[5] += e.clientY - lastPosY;
+      fabricCanvas.renderAll();
+      lastPosX = e.clientX;
+      lastPosY = e.clientY;
+    }
   });
 
   // * Draw line mouse up Event
   fabricCanvas.on("mouse:up", function (o) {
+    isDragging = false;
+
     if (!drawMode) return;
     isDrawing = false;
     line.setCoords();
