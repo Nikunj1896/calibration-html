@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.3/fabric.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
+</head>
+
+<body>
+    <span style="font-size: 14px"><b>Load PDF</b></span>
+    <input id="pdf-upload" type="file" accept=".pdf">
+    <button id="toggle-draw">Enable Drawing</button>
+    <button id="zoom-in">+</button>
+    <button id="zoom-out">-</button>
+    <canvas id="pdfcanvas"></canvas>
+
+    <script src="loadPdf.js"></script>
+</body>
+
+</html>
