@@ -327,6 +327,9 @@
         .querySelector("#zoom-out")
         .addEventListener("click", (event) => handleZoom(event, "out"));
     };
+
+// This code have a feature till measring , calibration , 
   </script>
 </body>
 </html>
+

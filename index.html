@@ -8,6 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
 
     <style>
+      body{
+        margin: 0;
+        padding: 0;
+      }
       nav {
         background-color: #ffea00;
         width: 100vw;
@@ -38,9 +42,9 @@
         background-color: rgb(238, 13, 13);
       }
       #background{
-        width: 90vw;
-        height: 90vh;
-        background-color: #ffea00;
+        width: 100vw;
+        height: 100vh;
+        background-color: #656458;
         overflow: hidden;
       }
     </style>
@@ -53,11 +57,13 @@
         <button id="toggle-draw">Enable Drawing</button>
         <button id="zoom-in">🔎+</button>
         <button id="zoom-out">🔎-</button>
+        <button id="previous">previous</button>
+        <button id="next" >next</button>
       </div>
     </nav>
     
     <div id="background">
-        <canvas id="pdfcanvas" style="border: solid black 5px"></canvas>
+        <canvas id="pdfcanvas" ></canvas>
     </div>
 
     <script src="loadPdf.js">
