@@ -1,72 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zooming</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.3/fabric.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
 
     <style>
-      body{
-        margin: 0;
-        padding: 0;
-      }
-      nav {
-        background-color: #ffea00;
-        width: 100vw;
-        padding: 20px;
-        border-bottom: 5px solid rgb(178, 170, 23);
-      }
-      #toggle-draw,#zoom-in ,#zoom-out{
-        float: right;
-        padding: 10px 10px;
-        margin: -7px 14px;
-        background-color: rgb(255, 255, 255);
-        border: none;
-        color: #000000;
-        font-family: Cascadia Code SemiBold;
-        border-radius: 5px;
-        transition: 0.5s;
-      }
-
-      #toggle-draw:hover{
-        background-color: #000000;
-        color: #ffea00;
-      }
-
-      #zoom-in:active {
-        background-color: rgb(27, 192, 27);
-      }
-      #zoom-out:active{
-        background-color: rgb(238, 13, 13);
-      }
-      #background{
-        width: 100vw;
-        height: 100vh;
-        background-color: #656458;
-        overflow: hidden;
-      }
+        body{
+            padding: 0%;
+            margin: 0%;
+            background-color: rgb(111, 119, 126);
+        }
+        nav{
+            background-color: aqua;
+            padding: 20px;
+            border-bottom: solid black 4px;
+        }
     </style>
-  </head>
+</head>
 
-  <body>
-    <nav>
-      <div id="controlls">
-        <input type="file" id="pdf-upload" accept="application/pdf" />
-        <button id="toggle-draw">Enable Drawing</button>
-        <button id="zoom-in">🔎+</button>
-        <button id="zoom-out">🔎-</button>
-        <button id="previous">previous</button>
-        <button id="next" >next</button>
-      </div>
-    </nav>
+<body>
+   <nav>
+    <span style="font-size: 14px"><b>Load PDF</b></span>
+    <input id="pdf-upload" type="file" accept=".pdf">
+    <button id="toggle-draw">Measure</button>
+    <button id="zoom-in">+</button>
+    <button id="zoom-out">-</button>
+    <button id="previous">previous</button>
+    <button id="next" >next</button>
+   </nav>
     
-    <div id="background">
-        <canvas id="pdfcanvas" ></canvas>
-    </div>
+    <canvas id="pdfcanvas"></canvas>
 
-    <script src="loadPdf.js">
-</script>
-  </body>
+    <script src="loadPdf.js"></script>
+</body>
+
 </html>
