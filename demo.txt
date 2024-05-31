@@ -330,7 +330,7 @@
         .addEventListener("click", (event) => handleZoom(event, "out"));
     };
 
-// This code have a feature till measring , calibration , 
+// This code have a feature till measring , calibration , before pagination
   </script>
 </body>
 </html>
