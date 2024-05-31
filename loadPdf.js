@@ -551,7 +551,8 @@ const init = () => {
   document.querySelector("#toggle-draw").addEventListener("click", function () {
     drawMode = !drawMode;
     moveMode = !moveMode;
-    this.textContent = drawMode ? "Disable Drawing" : "Enable Drawing";
+    this.textContent = drawMode ? "Measure On" : "Measure";
+    this.style.backgroundColor = drawMode ? "green" : "";
     fabricCanvas.selection = !drawMode;
 
     fabricCanvas.forEachObject(function (obj) {

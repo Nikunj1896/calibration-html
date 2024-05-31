@@ -29,7 +29,7 @@
       min-height: 100vh;
       width: 100%;
       height: 100%;
-      background-color: rgba(48, 47, 47, 0.356);
+      background-color: rgba(85, 85, 85, 0.356);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -54,6 +54,7 @@
     nav{
       background-color: aqua;
       padding: 10px;
+      border-bottom: solid black 4px;
     }
     
 
@@ -65,11 +66,11 @@
       <div id="nav">
         <span style="font-size: 14px"><b>Load PDF</b></span>
         <input id="pdf-upload" type="file" accept=".pdf">
-        <button id="toggle-draw">Enable Drawing</button>
+        <button id="calibration-btn">Calibration</button>
+        <button id="toggle-draw">Measure</button>
         <!-- <button id="download-pdf">Download page</button> -->
-        <button id="zoom-in">+</button>
+        <button id="zoom-in" style="margin-left: 150px;">+</button>
         <button id="zoom-out">-</button>
-        <button id="calibration-btn">Set Calibration</button>
       </div>
       <div>
         <button id="previous">Previous</button>
