@@ -113,8 +113,8 @@ const init = () => {
       points = [pointer.x, pointer.y, pointer.x, pointer.y];
 
       line = new fabric.Line(points, {
-        strokeWidth: 1,
-        fill: "red",
+        strokeWidth: 0.7,
+        fill: "black",
         stroke: "red",
         originX: "center",
         originY: "center",
@@ -356,7 +356,7 @@ const init = () => {
 
   function calculateLineLength(line) {
     const dx = line.x2 - line.x1;
-    console.log("Hello moto",dx);
+    console.log("Hello moto",dx) ;
     const dy = line.y2 - line.y1;
     return Math.sqrt(dx * dx + dy * dy);
   }
@@ -541,7 +541,7 @@ const init = () => {
     type === "in" && (zoom += zoomFactor);
     type === "out" && (zoom -= zoomFactor);
 
-    zoom = Math.min(Math.max(zoom, 0.5), 5);
+    zoom = Math.min(Math.max(zoom, 1), 10);
     fabricCanvas.setZoom(zoom);
     fabricCanvas.renderAll();
   }
@@ -613,7 +613,7 @@ const init = () => {
 
   // * Event listeners for wheel event for panning
   document.addEventListener("wheel", function (event) {
-    console.log(event);
+    // console.log(event);
     if (event.ctrlKey) return;
 
     if (event.shiftKey) {
@@ -628,6 +628,7 @@ const init = () => {
     //event.preventDefault();
   });
 
+  // download the PDF
   // document
   //   .querySelector("#download-pdf")
   //   .addEventListener("click", async function () {
@@ -703,4 +704,5 @@ const init = () => {
   fabric.Object.prototype.padding = 10;
   fabric.Object.prototype.transparentCorners = false;
   fabric.Object.prototype.cornerStyle = "circle";
+  
 };
