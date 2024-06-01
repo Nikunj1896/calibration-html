@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Calibration and Drawing</title>
+  <title>Validation + windows event</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.6.3/fabric.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.16.0/pdf-lib.min.js"></script>
@@ -87,10 +87,10 @@
       </div>
       <div>
         <label for="realLineLengthValue">Real Line Value:</label>
-        <input type="text" id="realLineLengthValue">
+        <input type="text" id="realLineLengthValue" value="00'-00&quot;">
         <select id="realLengthUnitSelect">
+          <option value="ft-in">ft-in</option>
           <option value="ft">ft</option>
-          <option value="ftin">ft-in</option>
           <option value="mm">mm</option>
           <option value="cm">cm</option>
           <option value="m">m</option>

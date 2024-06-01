@@ -31,7 +31,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
       updateButtonStates();
 
       pdf.getPage(pageNumber).then(function (page) {
-        const viewport = page.getViewport(3.0);
+        const viewport = page.getViewport(4.0);
         canvasEl.height = viewport.height;
         canvasEl.width = viewport.width;
 
@@ -113,9 +113,9 @@ const init = () => {
       points = [pointer.x, pointer.y, pointer.x, pointer.y];
 
       line = new fabric.Line(points, {
-        strokeWidth: 0.7,
+        strokeWidth: 0.3,
         fill: "black",
-        stroke: "red",
+        stroke: "black",
         originX: "center",
         originY: "center",
         selectable: false,
@@ -312,7 +312,7 @@ const init = () => {
       left: left,
       top: top,
       width: 15,
-      height: 1,
+      height: 0.3,
       fill: "#666",
       originX: "center",
       originY: "center",
@@ -328,7 +328,7 @@ const init = () => {
 
   function makeLineLengthText(line) {
     const text = new fabric.Text("", {
-      fontSize: 11,
+      fontSize: 9,
       height: 10,
       fill: "#000",
       originX: "center",
@@ -339,6 +339,8 @@ const init = () => {
       id: groupLength,
       name: `group-${groupLength}-text`,
     });
+
+    
     updateLineLengthText(line, text);
     return text;
   }
@@ -454,9 +456,11 @@ const init = () => {
     switch (realLineValueUnit) {
       case 'ft':
         return realLineValue * 1151.9999999832;
-      case 'ftin':
+      case 'ft-in':
         // Split the input string into feet and inches
-        const [feet, inches] = realLineValue.split('-').map(Number);
+        const [feet, inches] = realLineValue.split('-').map(Number);///////////////////////////////----------------->
+        console.log(feet);
+        console.log(inches);
         // Convert feet to inches and add the extra inches
         const totalInches = (feet * 12) + inches;
         // Convert inches to pixels
@@ -484,11 +488,11 @@ const init = () => {
       case 'ft':
         result = pixelValue * pixelsToFt;
         break;
-      case 'ftin':
+      case 'ft-in':
         const totalInches = pixelValue * pixelsToInches;
         const feet = Math.floor(totalInches / 12);
         const inches = totalInches % 12;
-        result = `${feet}-${inches.toFixed(2)}`;
+        result = `${feet}'-${inches.toFixed(2)}"`;  // use toFixed(2) for the .00 value
         break;
       case 'mm':
         result = pixelValue * pixelsToMm;
@@ -503,7 +507,7 @@ const init = () => {
         result = pixelValue;
         break;
     }
-    if (realLineValueUnit === 'ftin') {
+    if (realLineValueUnit === 'ft-in') {
       return result
     } else {
       return result.toFixed(2);
@@ -552,7 +556,7 @@ const init = () => {
     drawMode = !drawMode;
     moveMode = !moveMode;
     this.textContent = drawMode ? "Measure On" : "Measure";
-    this.style.backgroundColor = drawMode ? "green" : "";
+    this.style.backgroundColor = drawMode ? "yellow" : "";
     fabricCanvas.selection = !drawMode;
 
     fabricCanvas.forEachObject(function (obj) {
@@ -617,7 +621,7 @@ const init = () => {
     // console.log(event);
     if (event.ctrlKey) return;
 
-    if (event.shiftKey) {
+    if (event.shiftKey || event.metaKey) {
       // Horizontal scrolling when Shift key is pressed
       const delta = Math.sign(event.deltaY) * 30;
       fabricCanvas.relativePan(new fabric.Point(delta, 0));
@@ -671,12 +675,29 @@ const init = () => {
     });
   })
 
-  //* Button event to set the calibraation point
+  // calibartion button of popup box --->> with adding validation for ft-in
   document.querySelector('#setCalibration-value-btn').addEventListener('click', function () {
 
-    realLineValue = document.getElementById('realLineLengthValue').value;
+    
     realLineValueUnit = document.getElementById('realLengthUnitSelect').value;
-    console.log("realLineValue", realLineValue, "realLineValueUnit", realLineValueUnit,)
+
+    
+    if (realLineValueUnit === "ft-in") {
+    
+      var realLineValue = document.getElementById('realLineLengthValue').value;
+
+      var match = /^(\d+)'\-(\d+)"$/.exec(realLineValue);
+        if (match) {
+          
+          realLineValue = match[1] + '-' + match[2];
+      } else {
+          
+          alert("Value must be in the format 00'-00\"");
+      }
+  } else {
+      var realLineValue = document.getElementById('realLineLengthValue').value;
+  }
+  
 
     const realLineLengthValue = convertRealLineLength(realLineValue, realLineValueUnit)
     const pdfLineLengthValue = calculateLineLength(line)
@@ -706,4 +727,17 @@ const init = () => {
   fabric.Object.prototype.transparentCorners = false;
   fabric.Object.prototype.cornerStyle = "circle";
   
+
+  document.getElementById('realLengthUnitSelect').addEventListener('change', function () {
+    const unit = this.value;
+    let placeholderText = '00.00';
+    if (unit === 'ft') {
+        placeholderText = '00.00';
+    } else if (unit === 'ft-in') {
+        placeholderText = '00\'-00"';
+    } else {
+        placeholderText = '00.00';
+    }
+    document.getElementById('realLineLengthValue').setAttribute('value', placeholderText);
+});
 };
