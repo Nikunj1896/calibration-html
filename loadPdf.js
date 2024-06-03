@@ -682,7 +682,7 @@ const init = () => {
     });
   })
   
-  // functionality of clear viewport
+  // functionality of clear view port
   const cler = document.getElementById('clear-viewport');
   cler.addEventListener("click", function (e){
     const backgroundLayer = document.querySelector('#background-layer')
@@ -701,10 +701,13 @@ const init = () => {
       var realLineValue = document.getElementById('realLineLengthValue').value;
 
       var match = /^(\d+)'\-(\d+)"$/.exec(realLineValue);
+      var match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue);
         if (match) {
           
           realLineValue = match[1] + '-' + match[2];
-      } else {
+      } else if (match1) {
+          realLineValue = match1[1] + '-' + match1[2];
+      }else {
           
           alert("Value must be in the format 00'-00\"");
 
