@@ -31,7 +31,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
       updateButtonStates();
 
       pdf.getPage(pageNumber).then(function (page) {
-        const viewport = page.getViewport(4.0);
+        const viewport = page.getViewport(2.0);
         canvasEl.height = viewport.height;
         canvasEl.width = viewport.width;
 
@@ -49,13 +49,13 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
   fileReader.readAsArrayBuffer(pdfFile);
 };
 
-previousBtn.addEventListener("click", function () {
+previousBtn.addEventListener("click", function () {  // previous button
   currentPage = currentPage - 1;
   cleanCanvas();
   renderPdfToCanvas(currentPdfFile, currentPage);
 });
 
-nextBtn.addEventListener("click", function () {
+nextBtn.addEventListener("click", function () {  // next button
   currentPage = currentPage + 1;
   cleanCanvas();
   renderPdfToCanvas(currentPdfFile, currentPage);
@@ -330,6 +330,7 @@ const init = () => {
     const text = new fabric.Text("", {
       fontSize: 9,
       height: 10,
+      fontFamily: 'Candara Light',
       fill: "#000",
       originX: "center",
       originY: "center",
@@ -693,6 +694,13 @@ const init = () => {
       } else {
           
           alert("Value must be in the format 00'-00\"");
+
+          setTimeout(function() {
+            document.getElementById('realLineLengthValue').focus();
+        }, 0);
+
+        // Exit the function to prevent further execution
+        //return;
       }
   } else {
       var realLineValue = document.getElementById('realLineLengthValue').value;
