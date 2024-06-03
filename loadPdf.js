@@ -668,12 +668,25 @@ const init = () => {
     calibrationMode = true;
     moveMode = false;
     drawMode = true;
+
+    // blue layer 
+    const backgroundLayer = document.querySelector('#background-layer')
+    backgroundLayer.style.display = 'block';
+    backgroundLayer.style.backgroundColor = '#3f85ef61';
+
     if (calibrationMode) {
-      this.style.backgroundColor = 'green'
+      this.style.backgroundColor = 'green';
     }
     fabricCanvas.forEachObject(function (obj) {
       obj.selectable = !drawMode;
     });
+  })
+  
+  // functionality of clear viewport
+  const cler = document.getElementById('clear-viewport');
+  cler.addEventListener("click", function (e){
+    const backgroundLayer = document.querySelector('#background-layer')
+    backgroundLayer.style.display = 'none';
   })
 
   // calibartion button of popup box --->> with adding validation for ft-in
@@ -700,7 +713,7 @@ const init = () => {
         }, 0);
 
         // Exit the function to prevent further execution
-        //return;
+        return;
       }
   } else {
       var realLineValue = document.getElementById('realLineLengthValue').value;

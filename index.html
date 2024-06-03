@@ -56,8 +56,17 @@
       padding: 10px;
       border-bottom: solid black 4px;
     }
-    
-
+    #background-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      min-height: 100vh !important;
+      min-width: 100vw !important;
+      display: none;
+      margin-top: 75px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -73,12 +82,15 @@
         <button id="zoom-out">-</button>
       </div>
       <div>
+        <button id="clear-viewport"><b>clear-viewport</b></button>
         <button id="previous">Previous</button>
         <button id="next">Next</button>
       </div>
     </div>
   </nav>
   <canvas id="pdfcanvas"></canvas>
+  <div id="background-layer"></div>
+
   <div Id="popup" id="calibration-popup">
     <div class="box">
       <div>
