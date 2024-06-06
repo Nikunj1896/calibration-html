@@ -565,8 +565,7 @@ const init = () => {
           inches = parseInt(match3[2], 10);
           realLineValue = feet + "-" + inches;
         }else {
-          alert("Value must be in the format 00'-00\" or 00'00\"");
-          
+          alert("Value must be in the format 00'-00\" or 00'00\" ");
           return;
         }
       } else {
@@ -613,11 +612,12 @@ const init = () => {
   }
 
   // message check button functionaity to close message box
-
-  document.querySelector('#messagecheck').addEventListener('click',function(e){
-    message = document.getElementById("message");
-    message.style.display = "none";
-  })
+  document
+    .querySelector("#messagecheck")
+    .addEventListener("click", function (e) {
+      message = document.getElementById("message");
+      message.style.display = "none";
+    });
 };
 
 /**
@@ -645,8 +645,6 @@ function updateLineLengthText(line, text) {
     )}`,
   });
 }
-
-
 
 /**
  * Function to add a new line to the canvas.
@@ -941,7 +939,6 @@ function getFraction(value, quarters) {
 
   let quartersIndex = -1;
 
-  
   // Determine the quarter index
   for (let i = 1; i <= quarters; i++) {
     if (value <= i * quarterSize) {
