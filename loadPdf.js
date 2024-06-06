@@ -288,20 +288,23 @@ const init = () => {
         });
       }
 
+      // Right and wrong icon at side of calibrate line 
       if (isCalibrationLineDrawn && calibrationMode) {
         fabric.Object.prototype.controls.deleteControl = new fabric.Control({
-          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.1 : 1.2, // Horizontal or vertical adjustment
-          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -2.0 : -0.55,
-          offsetY: 16,
+          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+          offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
+          offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
           cursorStyle: "pointer",
           mouseUpHandler: deleteObject,
           render: renderdeleteIcon,
           cornerSize: 24,
         });
         fabric.Object.prototype.controls.doneControl = new fabric.Control({
-          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.1 : -1.2, // Horizontal or vertical adjustment
-          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -2.0 : -0.55,
-          offsetY: 16,
+          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+          offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : -30,
+          offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 20,
           cursorStyle: "pointer",
           mouseUpHandler: doneObject,
           render: renderDoneIcon,
@@ -320,6 +323,8 @@ const init = () => {
   function deleteObject() {
     if (confirm("Are you sure you want to delete this line?")) {
       removeLine(line);
+
+      message.style.display = "none";
       document.getElementById("popup").style.display = "none";
       document.getElementById("calibration-btn").style.backgroundColor =
         "#EFEFEF";
@@ -338,6 +343,7 @@ const init = () => {
 
   function doneObject() {
     document.getElementById("popup").style.display = "flex";
+    message.style.display = "none";
     const lengthText = updateMinions(line);
     document.getElementById("pdfLineLengthValue").innerHTML =
       lengthText.toFixed(2) + "px";
@@ -544,10 +550,11 @@ const init = () => {
       if (realLineValueUnit === "ftin") {
         realLineValue = document.getElementById("realLineLengthValue").value;
 
-        match = /^(\d+)'\-(\d+)"$/.exec(realLineValue);
-        match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue);
-        match2 = /^(\d+)'(\d+)"$/.exec(realLineValue);
-        match3 = /^(\d+)'(\d+)''$/.exec(realLineValue);
+        // match = /^(\d+)'\-(\d+(?:\.\d*)?)"$/.exec(realLineValue);
+        match = /^(\d+)'\-(\d+)"$/.exec(realLineValue); // 10'-00"
+        match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
+        match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
+        match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
         if (match) {
           feet = parseInt(match[1], 10);
           inches = parseInt(match[2], 10);
@@ -899,7 +906,11 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
       const inches = totalInches % 12;
       const preciosion = inches - Math.floor(inches);
       const quarter = precisionvalue.split("/")[1];
-      const ans = preciosion <= 0.1 ? " " : getFraction(preciosion, quarter);
+      const fraction = getFraction(preciosion, quarter);
+      fraction === ` ${quarter} / ${quarter}`;
+
+      //console.log(quarter);
+      const ans = preciosion <= 0.1 ? " " : fraction;
       //console.log(ans);
       result = `${feet}'-${inches.toFixed(0)} ${ans}"`;
       break;

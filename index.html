@@ -1,177 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calibration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.16.0/pdf-lib.min.js"></script>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calibration </title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/1.8.349/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.16.0/pdf-lib.min.js"></script>
+    <style>
+      body {
+        position: relative;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        background-color: rgb(111, 119, 126);
+      }
 
-  <style>
-    body {
-      position: relative;
-      padding: 0;
-      margin: 0;
-      overflow: hidden;
-      background-color: rgb(111, 119, 126);
-    }
+      nav {
+        background-color: aqua;
+        padding: 20px;
+        border-bottom: solid black 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 35px;
+      }
 
-    nav {
-      background-color: aqua;
-      padding: 20px;
-      border-bottom: solid black 4px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 35px;
-    }
+      #popup {
+        position: fixed;
+        /* Ensure the popup stays in place even when scrolling */
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(48, 47, 47, 0.356);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        display: none;
+        /* Ensure the popup is hidden initially */
+      }
 
-    #popup {
-      position: fixed;
-      /* Ensure the popup stays in place even when scrolling */
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(48, 47, 47, 0.356);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      display: none;
-      /* Ensure the popup is hidden initially */
-    }
+      .box {
+        padding: 10px;
+        background-color: rgb(255, 254, 254);
+        width: fit-content;
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        gap: 10px;
+        border: 1px solid black;
+        border-radius: 10px;
+      }
 
+      .buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    .box {
-      padding: 10px;
-      background-color: rgb(255, 254, 254);
-      width: fit-content;
-      display: flex;
-      flex-direction: column;
-      align-items: start;
-      gap: 10px;
-      border: 1px solid black;
-      border-radius: 10px;
-    }
+      #background-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+        min-height: 100vh !important;
+        min-width: 100vw !important;
+        display: none;
+        margin-top: 75px;
+        pointer-events: none;
+      }
 
-    .buttons {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      #message {
+        display: none;
+        /* padding: 5px; */
+        border-radius: 10px;
+        background-color: rgb(29, 28, 28);
+        color: rgb(189, 194, 197);
+        /* text-align: center; */
+        font-size: 20px;
+        position: fixed;
+        bottom: 20px; 
+        right: 20px; 
+        z-index: 1000;
+        transition: 0.5s;
+      }
 
-    #background-layer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 10;
-      min-height: 100vh !important;
-      min-width: 100vw !important;
-      display: none;
-      margin-top: 75px;
-      pointer-events: none;
-    }
+      #content {
+        width: 280px;
+        height: 90px;
+        background-color: rgb(29, 28, 28);
+        border-radius: 10px;
+      }
 
-    #message {
-      display: none;
-      padding: 5px;
-      border-radius: 10px;
-      background-color: rgba(14, 14, 14, 0.968);
-      color: rgb(189, 194, 197);
-      text-align: center;
-      font-size: 20px;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
-      transition: 0.5s;
-    }
+      #messagecheck {
+        background-color: rgba(250, 235, 215, 0);
+        cursor: pointer;
+      }
 
-    #content {
-      width: 300px;
-      height: 165px;
-      background-color: rgb(29, 28, 28);
-      border-radius: 10px;
-    }
+      #pre{
+        font-size: 16px;
+      }
+    </style>
+  </head>
 
-    #messagecheck{
-      background-color: rgba(250, 235, 215, 0);
-      cursor: pointer;
-    }
-  </style>
-
-</head>
-
-<body>
-  <nav>
-    <div>
-      <span style="font-size: 14px"><b>Load PDF</b></span>
-      <input id="pdf-upload" type="file" accept=".pdf">
-      <button id="zoom-in" style="margin-left: 50px;">+</button>
-      <button id="zoom-out">-</button>
-      <button id="calibration-btn" style="margin-left: 100px;">Set Calibration</button>
-      <button id="toggle-draw">Measure</button>
-      <button id="cleanCalibration-value-btn" style="background-color: rgb(239, 242, 245);">Re-Calibration</button>
-    </div>
-    <div>
-      <!-- <button id="Clearviewport">Clear-viewport</button> -->
-      <button id="previous">Previous</button>
-      <button id="next">Next</button>
-    </div>
-  </nav>
-
-  <canvas id="pdfcanvas"></canvas>
-  <div id="background-layer"></div>
-
-  <div id="message">
-    <div id="content" style="padding: 10px;">
-      <div style="float: right;">
-        <img src="delete.png" alt="icon" height="25px" width="25px" id="messagecheck">
-      </div>
-      <div style="margin-top: 60px;">
-        <h5 style="color: rgb(189, 194, 197); text-align: center; font-size: 20px;">Tap and drag between two points of a
-          known dimension to calibrate the measuring tool</h5>
-      </div>
-    </div>
-  </div>
-
-  <div Id="popup" id="calibration-popup">
-    <div class="box">
+  <body>
+    <nav>
       <div>
-        <label for="pdfLineLengthValue">PDF Line Value:</label>
-        <span id="pdfLineLengthValue"></span>
+        <span style="font-size: 14px"><b>Load PDF</b></span>
+        <input id="pdf-upload" type="file" accept=".pdf" />
+        <button id="zoom-in" style="margin-left: 50px">+</button>
+        <button id="zoom-out">-</button>
+        <button id="calibration-btn" style="margin-left: 100px">
+          Calibrate
+        </button>
+        <button id="toggle-draw">Measure</button>
+          <select id="pre">
+            <option value="1/2">1/2</option>
+            <option value="1/4">1/4</option>
+            <option value="1/8">1/8</option>
+            <option value="1/16">1/16</option>
+            <option value="1/32">1/32</option>
+          </select>
+          <label for="precision">Precision</label>
+        <!-- <button id="cleanCalibration-value-btn" style="background-color: rgb(239, 242, 245);">Re-Calibration</button> -->
       </div>
       <div>
-        <label for="realLineLengthValue">Real Line Value:</label>
-        <input type="text" id="realLineLengthValue" value="00'-00''">
-        <select id="realLengthUnitSelect">
-          <option value="ftin">ft-in</option>
-          <option value="ft">ft</option>
-          <option value="mm">mm</option>
-          <option value="cm">cm</option>
-          <option value="m">m</option>
-        </select>
-
-        <label for="precision">Precision</label>
-        <select id="pre">
-          <option value="1/2">1/2</option>
-          <option value="1/4">1/4</option>
-          <option value="1/8">1/8</option>
-          <option value="1/16">1/16</option>
-          <option value="1/32">1/32</option>
-        </select>
+        <!-- <button id="Clearviewport">Clear-viewport</button> -->
+        <button id="previous">Previous</button>
+        <button id="next">Next</button>
       </div>
-      <div class="buttons">
-        <button id="setCalibration-value-btn">Calibrate</button>
-        <button id="popup-close-btn">Close</button>
+    </nav>
+
+    <canvas id="pdfcanvas"></canvas>
+    <div id="background-layer"></div>
+
+    <div id="message">
+      <div id="content" >
+        <div style="float: left ; margin-top: 15px;">
+          <img
+            src="delete.png"
+            alt="icon"
+            height="20px"
+            width="20px"
+            id="messagecheck"
+            style="margin: 10px;"
+          />
+        </div>
+        <div style="margin: 20px;">
+          <h5
+            style="
+              color: rgb(255, 255, 255);
+              /* text-align: center; */
+              font-size: 17px;
+              margin-left: 30px;
+            "
+          >
+            Please select two points anywhere on the page to establish the calibration line.
+          </h5>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="loadPdf.js"></script>
-</body>
+    <div id="popup" id="calibration-popup">
+      <div class="box">
+        <div>
+          <label for="pdfLineLengthValue">PDF Line Value:</label>
+          <span id="pdfLineLengthValue"></span>
+        </div>
+        <div>
+          <label for="realLineLengthValue">Real Line Value:</label>
+          <input type="text" id="realLineLengthValue" value="00'-00''" />
+          <select id="realLengthUnitSelect">
+            <option value="ftin">ft-in</option>
+            <option value="ft">ft</option>
+            <option value="mm">mm</option>
+            <option value="cm">cm</option>
+            <option value="m">m</option>
+          </select>
+        </div>
+        <div class="buttons">
+          <button id="setCalibration-value-btn">Calibrate</button>
+          <button id="popup-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
 
+    <script src="loadPdf.js"></script>
+  </body>
 </html>
