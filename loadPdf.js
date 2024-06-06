@@ -129,7 +129,7 @@ const init = () => {
     points = [pointer.x, pointer.y, pointer.x, pointer.y];
 
     if (calibrationMode) {
-      message.style.display = "none";
+      // message.style.display = "none";
       const backgroundLayer = document.querySelector("#background-layer");
       backgroundLayer.style.display = "none";
       if (!isCalibrationPointAAdded) {
@@ -535,7 +535,7 @@ const init = () => {
     alert("calibration point is already set");
   }
 
-  //* Button event to set the calibraation point
+  //* Button event to set the calibration point
   document
     .querySelector("#setCalibration-value-btn")
     .addEventListener("click", function () {
@@ -546,6 +546,8 @@ const init = () => {
 
         match = /^(\d+)'\-(\d+)"$/.exec(realLineValue);
         match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue);
+        match2 = /^(\d+)'(\d+)"$/.exec(realLineValue);
+        match3 = /^(\d+)'(\d+)''$/.exec(realLineValue);
         if (match) {
           feet = parseInt(match[1], 10);
           inches = parseInt(match[2], 10);
@@ -554,8 +556,18 @@ const init = () => {
           feet = parseInt(match1[1], 10);
           inches = parseInt(match1[2], 10);
           realLineValue = feet + "-" + inches;
-        } else {
-          alert("Value must be in the format 00'-00\"");
+        } else if(match2){
+          feet = parseInt(match2[1], 10);
+          inches = parseInt(match2[2], 10);
+          realLineValue = feet + "-" + inches;
+        } else if(match3){
+          feet = parseInt(match3[1], 10);
+          inches = parseInt(match3[2], 10);
+          realLineValue = feet + "-" + inches;
+        }else {
+          alert("Value must be in the format 00'-00\" or 00'00\"");
+          
+          return;
         }
       } else {
         realLineValue = document.getElementById("realLineLengthValue").value;
@@ -600,23 +612,12 @@ const init = () => {
     realLineValueUnit = "";
   }
 
-  document
-    .querySelector("#cleanCalibration-value-btn")
-    .addEventListener("click", () => {
-      clearCalibration();
-      document.getElementById("calibration-btn").style.backgroundColor =
-        "#EFEFEF";
-    });
+  // message check button functionaity to close message box
 
-  document
-    .querySelector("#Clearviewport")
-    .addEventListener("click", function () {
-      const backgroundLayer = document.querySelector("#background-layer");
-      backgroundLayer.style.display = "none";
-
-      message = document.getElementById("message");
-      message.style.display = "none";
-    });
+  document.querySelector('#messagecheck').addEventListener('click',function(e){
+    message = document.getElementById("message");
+    message.style.display = "none";
+  })
 };
 
 /**
@@ -644,6 +645,8 @@ function updateLineLengthText(line, text) {
     )}`,
   });
 }
+
+
 
 /**
  * Function to add a new line to the canvas.
