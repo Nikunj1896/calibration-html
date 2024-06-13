@@ -54,7 +54,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             viewport: viewport,
           })
           .then(function () {
-            init();
+            init() ;
           });
       });
     });
