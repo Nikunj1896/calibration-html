@@ -47,8 +47,6 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
         const viewport = page.getViewport(2.0);
         canvasEl.height = viewport.height;
         canvasEl.width = viewport.width;
-        console.log(canvasEl.height);
-        convertPixelLength
 
         page
           .render({
@@ -75,6 +73,20 @@ next.addEventListener("click", function () {
   initFabricCanvas();
   renderPdfToCanvas(currentPdfFile, currentPage);
 });
+
+// reset.addEventListener('click', function (){
+//   // initFabricCanvas();
+//   fabricCanvas.dispose();
+//   renderPdfToCanvas(currentPdfFile , currentPage);
+// })
+
+// ctrl + r to rerender the page
+// document.addEventListener('keydown', function (event) {
+//   if (event.ctrlKey && event.key === 'r') {
+//     event.preventDefault(); // Prevent the default browser reload behavior
+//     renderPdfToCanvas(currentPdfFile, currentPage);
+//   }
+// });
 
 const updateButtonStates = () => {
   previous.disabled = currentPage <= 1;
@@ -290,7 +302,7 @@ const init = () => {
         });
       }
 
-      // Right and wrong icon at side of calibrate line 
+      // Right and wrong icon at side of calibrate line
       if (isCalibrationLineDrawn && calibrationMode) {
         fabric.Object.prototype.controls.deleteControl = new fabric.Control({
           x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
@@ -405,14 +417,13 @@ const init = () => {
    */
   function handleZoom(event, type) {
     event.preventDefault();
-    const zoomFactor = 0.1;
+    const zoomFactor = 0.2;
     let zoom = fabricCanvas.getZoom();
-
     type === "in" && (zoom += zoomFactor);
     type === "out" && (zoom -= zoomFactor);
-
     zoom = Math.min(Math.max(zoom, 0.5), 8);
-    fabricCanvas.setZoom(zoom);
+    fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
+    // fabricCanvas.setZoom(zoom);
     fabricCanvas.renderAll();
   }
 
@@ -565,15 +576,15 @@ const init = () => {
           feet = parseInt(match1[1], 10);
           inches = parseInt(match1[2], 10);
           realLineValue = feet + "-" + inches;
-        } else if(match2){
+        } else if (match2) {
           feet = parseInt(match2[1], 10);
           inches = parseInt(match2[2], 10);
           realLineValue = feet + "-" + inches;
-        } else if(match3){
+        } else if (match3) {
           feet = parseInt(match3[1], 10);
           inches = parseInt(match3[2], 10);
           realLineValue = feet + "-" + inches;
-        }else {
+        } else {
           alert("Value must be in the format 00'-00\" or 00'00\" ");
           return;
         }
@@ -627,7 +638,46 @@ const init = () => {
       message = document.getElementById("message");
       message.style.display = "none";
     });
+
+  // download the pdf page
+  // document
+  //   .querySelector("#download-pdf")
+  //   .addEventListener("click", async function () {
+  //     // const fabricCanvas = document.querySelector("canvas").fabric;
+  //     const dataUrl = fabricCanvas.toDataURL({
+  //       format: "png",
+  //       multiplier: 2, // adjust the resolution if needed
+  //     });
+
+  //     const pdfDoc = await PDFLib.PDFDocument.create();
+  //     const page = pdfDoc.addPage([canvasEl.width, canvasEl.height]);
+  //     const pngImage = await pdfDoc.embedPng(dataUrl);
+  //     page.drawImage(pngImage, {
+  //       x: 0,
+  //       y: 0,
+  //       width: canvasEl.width,
+  //       height: canvasEl.height,
+  //     });
+
+  //     const pdfBytes = await pdfDoc.save();
+  //     const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  //     const url = URL.createObjectURL(blob);
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.download = "modified.pdf";
+  //     link.click();
+  //     URL.revokeObjectURL(url);
+  //   });
 };
+
+function displayFileName() {
+  var input = document.getElementById('pdf-upload');
+  var fileName = input.files[0].name;
+  console.log(fileName);
+  document.getElementById("file-value").innerHTML = fileName;
+  document.getElementById("file-value").style.display = "block";
+  
+}
 
 /**
  * Function to update the text representing the length of a line.
@@ -960,7 +1010,7 @@ function getFraction(value, quarters) {
     }
   }
   //console.log(value);
-  return `${quartersIndex}/${quarters}`;  
+  return `${quartersIndex}/${quarters}`;
 }
 
 /**
