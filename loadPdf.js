@@ -1,7 +1,3 @@
-fabric.Object.prototype.padding = 10;
-fabric.Object.prototype.transparentCorners = false;
-fabric.Object.prototype.cornerStyle = "circle";
-
 const canvasEl = document.querySelector("canvas");
 const canvasContext = canvasEl.getContext("2d");
 
@@ -23,16 +19,37 @@ let realLineValueUnit = "";
 let calibrationPoint = 1;
 let fabricCanvas;
 
-document.querySelector("#pdf-upload").addEventListener("change", function (e) {
-  const file = e.target.files[0];
-  if (file.type !== "application/pdf") {
-    console.error(file.name, "is not a pdf file.");
-    return;
+fabric.Object.prototype.padding = 10;
+fabric.Object.prototype.transparentCorners = false;
+fabric.Object.prototype.cornerStyle = "circle";
+
+document.querySelector("#pdf-upload").addEventListener(
+  "change"
+  /**
+   * Event listener for the file input element.
+   * Opens the selected PDF file and renders the first page to the canvas.
+   * @param {Event} e - The event object containing the file input details.
+   * @returns {void}
+   */,
+  function (e) {
+    const file = e.target.files[0];
+
+    // Check if the selected file is a PDF
+    if (file.type !== "application/pdf") {
+      console.error(file.name, "is not a pdf file.");
+      return;
+    }
+
+    // Store the selected PDF file
+    currentPdfFile = file;
+
+    // Reset the current page to the first page
+    currentPage = 1;
+
+    // Render the first page of the PDF file to the canvas
+    renderPdfToCanvas(file, currentPage);
   }
-  currentPdfFile = file;
-  currentPage = 1; // Reset to the first page
-  renderPdfToCanvas(file, currentPage);
-});
+);
 
 const renderPdfToCanvas = (pdfFile, pageNumber) => {
   const fileReader = new FileReader();
@@ -54,7 +71,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             viewport: viewport,
           })
           .then(function () {
-            init() ;
+            init();
           });
       });
     });
@@ -125,13 +142,23 @@ const init = () => {
   // * Print PDF into canvas as Image
   fabric.Image.fromURL(bg, function (img) {
     img.scaleToHeight(1123);
-    fabricCanvas.setHeight(1123);
-    fabricCanvas.setWidth(1588);
+    fabricCanvas.setHeight(1123); // customize canvasE1.width
+    fabricCanvas.setWidth(1588); // customize canvasE1.height
     fabricCanvas.setBackgroundImage(
       img,
       fabricCanvas.renderAll.bind(fabricCanvas)
     );
   });
+
+  // fabric.Image.fromURL(bg, function (img) {
+  //   img.scaleToHeight(viewport);
+  //   fabricCanvas.setHeight(canvasEl.width);
+  //   fabricCanvas.setWidth(canvasEl.height);
+  //   fabricCanvas.setBackgroundImage(
+  //     img,
+  //     fabricCanvas.renderAll.bind(fabricCanvas)
+  //   );
+  // });
 
   // * Draw line mouse down Event
   fabricCanvas.on("mouse:down", function (o) {
@@ -278,14 +305,15 @@ const init = () => {
         //* Horizontal line
         selectedLine.setControlsVisibility({
           ml: true, //middle-left
-          mr: true, //middle-right
-          tl: false, //top-left
-          tr: false, //top-right
-          bl: false, //bottom-left
+          //bottom-left
           br: false, //bottom-right
           mt: false, //middle-top
           mb: false, //middle-bottom
           mtr: true, //rotation-pointer
+          mr: true, //middle-right
+          tl: false, //top-left
+          tr: false, //top-right
+          bl: false,
         });
       } else {
         //* Vertical line
@@ -298,7 +326,7 @@ const init = () => {
           br: false, //bottom-right
           mt: true, //middle-top
           mb: true, //middle-bottom
-          mtr: true, //rotation-pointer
+          mtr: true, // rotate control
         });
       }
 
@@ -309,6 +337,9 @@ const init = () => {
           y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
           offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
           offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
+
+          // offsetY: isHorizontal ? offsetYIfHorizontal : offsetYIfVertical,
+          // offsetX: isHorizontal ? offsetXIfHorizontal : offsetXIfVertical,
           cursorStyle: "pointer",
           mouseUpHandler: deleteObject,
           render: renderdeleteIcon,
@@ -465,7 +496,7 @@ const init = () => {
       (event.ctrlKey && event.code === "NumpadSubtract")
     ) {
       handleZoom(event, "out");
-    } else if (event.key === "Delete" || event.key === "Backspace") {
+    } else if (event.key === "Delete") {
       // Delete the selected object (line)
       const activeObject = fabricCanvas.getActiveObject();
       if (activeObject && activeObject.type === "line") {
@@ -670,14 +701,13 @@ const init = () => {
   //   });
 };
 
-function displayFileName() {
-  var input = document.getElementById('pdf-upload');
+const displayFileName = () => {
+  var input = document.getElementById("pdf-upload");
   var fileName = input.files[0].name;
   console.log(fileName);
   document.getElementById("file-value").innerHTML = fileName;
   document.getElementById("file-value").style.display = "block";
-  
-}
+};
 
 /**
  * Function to update the text representing the length of a line.
@@ -718,7 +748,7 @@ const addLine = ({ points, isInitialShowText }) => {
     stroke: "black",
     originX: "center",
     originY: "center",
-    selectable: false,
+    selectable: false, // true
     evented: false,
     lockSkewingX: true,
     lockSkewingY: true,
@@ -958,12 +988,17 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
       const inches = totalInches % 12;
       const preciosion = inches - Math.floor(inches);
       const quarter = precisionvalue.split("/")[1];
+      // const quarter = precisionvalue.split("/")[2];
       const fraction = getFraction(preciosion, quarter);
       fraction === ` ${quarter} / ${quarter}`;
 
+      // function getFraction(decimal, denominator) {
+      //   const numerator = Math.round(decimal * denominator);
+      //   return `${numerator}/${denominator}`;
+      // }
+
       //console.log(quarter);
       const ans = preciosion <= 0.1 ? " " : fraction;
-      //console.log(ans);
       result = `${feet}'-${inches.toFixed(0)} ${ans}"`;
       break;
     case "mm":
@@ -1114,23 +1149,14 @@ function setRelationship(line) {
   });
 }
 
-document.getElementById("realLengthUnitSelect").addEventListener(
-  "change",
-  /**
-   * Event handler for the change event of the real line length unit select element.
-   * Updates the value of the real line length value input element based on the selected unit.
-   * @returns {void}
-   */ function () {
-    // Get the real line length value input element
-    var realLineLengthValue = document.getElementById("realLineLengthValue");
+document.getElementById("realLengthUnitSelect").addEventListener("change", () => {
+  // Get the real line length value input element
+  const realLineLengthValue = document.getElementById("realLineLengthValue");
 
-    // Check the selected value of the real line length unit select element
-    if (this.value === "ftin") {
-      // If the selected unit is 'ftin', set the initial value of the real line length value input element to "00'-00\""
-      realLineLengthValue.value = "00'-00\"";
-    } else {
-      // If the selected unit is not 'ftin', set the initial value of the real line length value input element to "00.00"
-      realLineLengthValue.value = "00.00";
-    }
-  }
-);
+  // Destructure the value property from the event target (the select element)
+  const { value } = event.target;
+
+  // Update the real line length value based on the selected unit
+  realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
+});
+;
