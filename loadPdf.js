@@ -47,6 +47,8 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
         const viewport = page.getViewport(2.0);
         canvasEl.height = viewport.height;
         canvasEl.width = viewport.width;
+        console.log(canvasEl.height);
+        convertPixelLength
 
         page
           .render({
