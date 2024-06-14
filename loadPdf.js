@@ -61,7 +61,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
       updateButtonStates();
 
       pdf.getPage(pageNumber).then(function (page) {
-        const viewport = page.getViewport(2.0);
+        const viewport = page.getViewport(3.0);
         canvasEl.height = viewport.height;
         canvasEl.width = viewport.width;
 
@@ -1160,3 +1160,127 @@ document.getElementById("realLengthUnitSelect").addEventListener("change", () =>
   realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
 });
 ;
+let magnifierEnabled = false; // Track if the magnifier is enabled
+
+document.getElementById("magnifier-btn").addEventListener("click", () => {
+  const magnifierBtn = document.getElementById("magnifier-btn");
+  const isMagnifierOn = magnifierBtn.classList.contains("active");
+
+  if (isMagnifierOn) {
+    disableMagnifier();
+    magnifierBtn.classList.remove("active");
+    magnifierBtn.style.backgroundColor = ""
+    magnifierEnabled = false; // Update the magnifier state
+  
+  } else {
+    enableMagnifier();
+    magnifierBtn.classList.add("active");
+    moveMode = true;
+    magnifierBtn.style.backgroundColor = "yellow"
+    magnifierEnabled = true; // Update the magnifier state
+  }
+});
+
+fabricCanvas.on('mouse:down', (event) => {
+  if (!magnifierEnabled) {
+    // Draw new lines only when the magnifier is disabled
+    const pointer = fabricCanvas.getPointer(event.e);
+    const points = [pointer.x, pointer.y, pointer.x + 50, pointer.y + 50]; // Adjust line coordinates as needed
+    const line = new fabric.Line(points, {
+      fill: 'black',
+      stroke: 'black',
+      strokeWidth: 5,
+      selectable: true,
+    });
+    fabricCanvas.add(line);
+  }
+});
+
+function enableMagnifier() {
+  const magnifierSize = 100; // New size of the magnifier square
+  const zoomLevel = 2; // Magnification level
+  const borderRadius = 5; // Border radius for the magnifier
+
+  // Add event listener to the canvas to track mouse movements and zoom
+  fabricCanvas.on('mouse:move', updateMagnifiedView);
+  fabricCanvas.on('mouse:wheel', updateMagnifiedView);
+
+  function updateMagnifiedView(event) {
+    const pointer = fabricCanvas.getPointer(event.e);
+    
+    // Check if a line is selected
+    const selectedLine = fabricCanvas.getActiveObject();
+    if (selectedLine && selectedLine.type === 'line') {
+      const selectedControl = selectedLine.__corner;
+      if (selectedControl) {
+        // Calculate the magnifier size based on the zoom level
+        const magnifierSize = 100 / fabricCanvas.getZoom(); // Adjust this value as needed
+        
+        // Create or update the magnifier rectangle
+        if (!fabricCanvas.magnifier) {
+          fabricCanvas.magnifier = new fabric.Rect({
+            left: pointer.x - magnifierSize / 2,
+            top: pointer.y - magnifierSize / 2,
+            width: magnifierSize,
+            height: magnifierSize,
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 1,
+            selectable: false,
+            evented: false,
+            rx: borderRadius, // Set the horizontal border radius
+            ry: borderRadius, // Set the vertical border radius
+          });
+          fabricCanvas.add(fabricCanvas.magnifier);
+        } else {
+          fabricCanvas.magnifier.set({
+            left: pointer.x + 20,
+            top: pointer.y + 20,
+            width: magnifierSize,
+            height: magnifierSize,
+          });
+        }
+    
+        // Capture the portion of the canvas under the magnifier
+        const magnifiedCanvas = document.createElement('canvas');
+        magnifiedCanvas.width = magnifierSize;
+        magnifiedCanvas.height = magnifierSize;
+        const magnifiedContext = magnifiedCanvas.getContext('2d');
+        magnifiedContext.drawImage(
+          fabricCanvas.lowerCanvasEl,
+          pointer.x - magnifierSize / 2,
+          pointer.y - magnifierSize / 2,
+          magnifierSize,
+          magnifierSize,
+          0,
+          0,
+          magnifierSize * zoomLevel,
+          magnifierSize * zoomLevel
+        );
+    
+        // Set the magnifier's fill with the magnified content
+        fabricCanvas.magnifier.set({
+          fill: new fabric.Pattern({
+            source: magnifiedCanvas,
+            repeat: 'no-repeat',
+          }),
+        });
+    
+        fabricCanvas.renderAll();
+      }
+    }
+  }
+  
+  
+}
+
+function disableMagnifier() {
+  // Remove the magnifier rectangle from the canvas
+  if (fabricCanvas.magnifier) {
+    fabricCanvas.remove(fabricCanvas.magnifier);
+    fabricCanvas.magnifier = null;
+  }
+
+  // Remove the event listener for mouse movements
+  //fabricCanvas.off('mouse:move');
+}
