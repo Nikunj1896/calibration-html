@@ -1234,8 +1234,8 @@ function enableMagnifier() {
           fabricCanvas.add(fabricCanvas.magnifier);
         } else {
           fabricCanvas.magnifier.set({
-            left: pointer.x + 20,
-            top: pointer.y + 20,
+            left: pointer.x - magnifierSize / 2,   // + 20
+            top: pointer.y - magnifierSize / 2,   //  + 20
             width: magnifierSize,
             height: magnifierSize,
           });
