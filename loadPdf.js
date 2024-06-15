@@ -12,12 +12,17 @@ const doneIcon = "./done.png";
 const doneImg = document.createElement("img");
 doneImg.src = doneIcon;
 
+const zoomCanvas = document.getElementById('zoomed');
+const zoomctx = zoomCanvas.getContext('2d');
+
 let totalPage = 0;
 let currentPage = 1;
 let currentPdfFile = null;
 let realLineValueUnit = "";
 let calibrationPoint = 1;
 let fabricCanvas;
+let isMegnifier = false;
+let zoom = 1;
 
 fabric.Object.prototype.padding = 10;
 fabric.Object.prototype.transparentCorners = false;
@@ -39,16 +44,10 @@ document.querySelector("#pdf-upload").addEventListener(
       console.error(file.name, "is not a pdf file.");
       return;
     }
-
-    // Store the selected PDF file
     currentPdfFile = file;
-
-    // Reset the current page to the first page
     currentPage = 1;
-
-    // Render the first page of the PDF file to the canvas
     renderPdfToCanvas(file, currentPage);
-  }
+}
 );
 
 const renderPdfToCanvas = (pdfFile, pageNumber) => {
@@ -239,54 +238,55 @@ const init = () => {
     }
   });
 
-  fabricCanvas.on("mouse:up", function (o) {
-    if (isAnyLineSelected) return;
-    isDragging = false;
+    fabricCanvas.on("mouse:up", function (o) {
+        if (isAnyLineSelected) return;
+        isDragging = false;
 
-    if (calibrationMode) {
-      if (isCalibrationPointAAdded) {
-        isCalibrationPointBAdded = true;
-        isCalibrationLineDrawn = true;
-        fabricCanvas.setActiveObject(line);
-      }
-      isCalibrationPointAAdded = true;
+        if (calibrationMode) {
+            if (isCalibrationPointAAdded) {
+                isCalibrationPointBAdded = true;
+                isCalibrationLineDrawn = true;
+                fabricCanvas.setActiveObject(line);
+            }
+            isCalibrationPointAAdded = true;
 
-      return;
-    }
+            return;
+        }
 
-    if (!drawMode) return;
-    isDrawing = false;
-    completeLine({ line });
+        if (!drawMode) return;
+        isDrawing = false;
+        completeLine({ line });
 
-    if (!isMoving) {
-      fabricCanvas.remove(line);
-      fabricCanvas.remove(startDivider);
-      fabricCanvas.remove(endDivider);
-      fabricCanvas.remove(lineLengthText);
-    }
+        if (!isMoving) {
+            fabricCanvas.remove(line);
+            fabricCanvas.remove(startDivider);
+            fabricCanvas.remove(endDivider);
+            fabricCanvas.remove(lineLengthText);
+        }
 
-    fabricCanvas.renderAll();
+        fabricCanvas.renderAll();
 
-    groupLength += groupLength;
-    isMoving = false;
-  });
+        groupLength += groupLength;
+        isMoving = false;
+    });
 
-  fabricCanvas.on("selection:created", function (e) {
-    const selectedObject = e.selected[0];
-    handleLineObjectSelection(selectedObject);
-  });
+    fabricCanvas.on("selection:created", function (e) {
+        const selectedObject = e.selected[0];
+        handleLineObjectSelection(selectedObject);
+    });
 
-  fabricCanvas.on("selection:updated", function (e) {
-    handleLineObjectSelection(e.selected[0]);
-  });
+    fabricCanvas.on("selection:updated", function (e) {
+        handleLineObjectSelection(e.selected[0]);
+    });
 
-  fabricCanvas.on("selection:cleared", function (e) {
-    isAnyLineSelected = false;
-  });
+    fabricCanvas.on("selection:cleared", function (e) {
+        isAnyLineSelected = false;
+    });
 
-  fabricCanvas.on("object:moving", function (o) {
-    updateMinions(o.target);
-  });
+    fabricCanvas.on("object:moving", function (o) {
+        updateMinions(o.target);
+        updateMagnifier(o)
+    });
 
   fabricCanvas.on("object:rotating", function (o) {
     updateMinions(o.target);
@@ -386,13 +386,13 @@ const init = () => {
     ctx.restore();
   }
 
-  function doneObject() {
-    document.getElementById("popup").style.display = "flex";
-    message.style.display = "none";
-    const lengthText = updateMinions(line);
-    document.getElementById("pdfLineLengthValue").innerHTML =
-      lengthText.toFixed(2) + "px";
-  }
+    function doneObject() {
+        document.getElementById("popup").style.display = "flex";
+        message.style.display = "none";
+        const lengthText = updateMinions(line);
+        document.getElementById("pdfLineLengthValue").innerHTML =
+            lengthText.toFixed(2) + "px";
+    }
 
   function renderDoneIcon(ctx, left, top, styleOverride, fabricObject) {
     const size = this.cornerSize;
@@ -403,44 +403,44 @@ const init = () => {
     ctx.restore();
   }
 
-  function convertRealLineLength(realLineValue, realLineValueUnit) {
-    const inchesToPixels = 96;
-    const mmToPixels = 1151.9999999832 / 304.8; // 1 mm = 1/25.4 inches, 1 inch = 96 pixels, hence 1 mm = (96 / 25.4) pixels
-    const cmToPixels = 1151.9999999832 / 30.48; // 1 cm = 10 mm, hence conversion factor for cm
-    const mToPixels = 1151.9999999832 / 0.3048; // 1 m = 1000 mm, hence conversion factor for m
+    function convertRealLineLength(realLineValue, realLineValueUnit) {
+        const inchesToPixels = 96;
+        const mmToPixels = 1151.9999999832 / 304.8; // 1 mm = 1/25.4 inches, 1 inch = 96 pixels, hence 1 mm = (96 / 25.4) pixels
+        const cmToPixels = 1151.9999999832 / 30.48; // 1 cm = 10 mm, hence conversion factor for cm
+        const mToPixels = 1151.9999999832 / 0.3048; // 1 m = 1000 mm, hence conversion factor for m
 
-    switch (realLineValueUnit) {
-      case "ft":
-        return realLineValue * 1151.9999999832;
-      case "ftin":
-        // Split the input string into feet and inches
-        const [feet, inches] = realLineValue.split("-").map(Number);
-        // Convert feet to inches and add the extra inches
-        const totalInches = feet * 12 + inches;
-        // Convert inches to pixels
-        return totalInches * inchesToPixels;
-      case "mm":
-        return realLineValue * mmToPixels;
-      case "cm":
-        return realLineValue * cmToPixels;
-      case "m":
-        return realLineValue * mToPixels;
-      default:
-        return realLineValue;
+        switch (realLineValueUnit) {
+            case "ft":
+                return realLineValue * 1151.9999999832;
+            case "ftin":
+                // Split the input string into feet and inches
+                const [feet, inches] = realLineValue.split("-").map(Number);
+                // Convert feet to inches and add the extra inches
+                const totalInches = feet * 12 + inches;
+                // Convert inches to pixels
+                return totalInches * inchesToPixels;
+            case "mm":
+                return realLineValue * mmToPixels;
+            case "cm":
+                return realLineValue * cmToPixels;
+            case "m":
+                return realLineValue * mToPixels;
+            default:
+                return realLineValue;
+        }
     }
-  }
 
-  function countCalibrationPoint(pdfLineLengthValue, realLineLengthValue) {
-    return (calibrationPoint = realLineLengthValue / pdfLineLengthValue);
-  }
+    function countCalibrationPoint(pdfLineLengthValue, realLineLengthValue) {
+        return (calibrationPoint = realLineLengthValue / pdfLineLengthValue);
+    }
 
-  function removeLine(line) {
-    line.minions.forEach((minion) => {
-      fabricCanvas.remove(minion);
-    });
-    fabricCanvas.remove(line);
-    fabricCanvas.renderAll();
-  }
+    function removeLine(line) {
+        line.minions.forEach((minion) => {
+            fabricCanvas.remove(minion);
+        });
+        fabricCanvas.remove(line);
+        fabricCanvas.renderAll();
+    }
 
   /**
    * @param {*} event
@@ -702,11 +702,11 @@ const init = () => {
 };
 
 const displayFileName = () => {
-  var input = document.getElementById("pdf-upload");
-  var fileName = input.files[0].name;
-  console.log(fileName);
-  document.getElementById("file-value").innerHTML = fileName;
-  document.getElementById("file-value").style.display = "block";
+    var input = document.getElementById("pdf-upload");
+    var fileName = input.files[0].name;
+    console.log(fileName);
+    document.getElementById("file-value").innerHTML = fileName;
+    document.getElementById("file-value").style.display = "block";
 };
 
 /**
@@ -741,20 +741,17 @@ function updateLineLengthText(line, text) {
  * @returns {Object} - The new line, its start divider, end divider, and line length text.
  */
 const addLine = ({ points, isInitialShowText }) => {
-  // const pointer = fabricCanvas.getPointer(evt);
-  let newLine = new fabric.Line(points, {
-    strokeWidth: 0.3,
-    fill: "black",
-    stroke: "black",
-    originX: "center",
-    originY: "center",
-    selectable: false, // true
-    evented: false,
-    lockSkewingX: true,
-    lockSkewingY: true,
-    // id: groupLength,
-    // name: `group-${groupLength}-line`,
-  });
+    let newLine = new fabric.Line(points, {
+        strokeWidth: 0.3,
+        fill: "black",
+        stroke: "black",
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+        lockSkewingX: true,
+        lockSkewingY: true,
+    });
 
   const startDivider = makeDivider(
     newLine.get("x1"),
