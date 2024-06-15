@@ -23,26 +23,37 @@ let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
 let zoom = 1;
+let lineColor = "black";
+
+let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
+let isCalibrationPointAAdded = false;
+let isCalibrationPointBAdded = false;
+let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
 
 fabric.Object.prototype.padding = 10;
 fabric.Object.prototype.transparentCorners = false;
 fabric.Object.prototype.cornerStyle = "circle";
 
 document.querySelector("#pdf-upload").addEventListener(
-  "change"
-  /**
-   * Event listener for the file input element.
-   * Opens the selected PDF file and renders the first page to the canvas.
-   * @param {Event} e - The event object containing the file input details.
-   * @returns {void}
-   */,
-  function (e) {
+    "change",
+    /**
+ * Event listener for file upload.
+ * Validates the uploaded file to ensure it's a PDF.
+ * If valid, sets the current PDF file and renders the first page to the canvas.
+ *
+ * @param {Event} e - The event object containing the file upload details.
+ */
+    /**
+ * Event listener for file input.
+ * Validates the selected file to ensure it's a PDF.
+ * If valid, sets the current PDF file and renders the first page to the canvas.
+ * @param {Event} e - The event object containing the file input details.
+ */
+function (e) {
     const file = e.target.files[0];
-
-    // Check if the selected file is a PDF
     if (file.type !== "application/pdf") {
-      console.error(file.name, "is not a pdf file.");
-      return;
+        console.error(file.name, "is not a pdf file.");
+        return;
     }
     currentPdfFile = file;
     currentPage = 1;
@@ -50,193 +61,293 @@ document.querySelector("#pdf-upload").addEventListener(
 }
 );
 
-const renderPdfToCanvas = (pdfFile, pageNumber) => {
-  const fileReader = new FileReader();
-  fileReader.onload = function () {
-    const typedarray = new Uint8Array(this.result);
+document.querySelector("#megnifier").addEventListener("click", /**
+ * Toggles the magnifier functionality.
+ * 
+ * @param {Event} event - The event that triggered this function.
+ * @returns {void}
+ */
+    /**
+ * Toggles the magnifier mode on and off.
+ * @returns {void}
+ */
+function () {
+    isMegnifier = !isMegnifier;
+    console.log('ismegnifier', isMegnifier);
 
-    PDFJS.getDocument(typedarray).then(function (pdf) {
-      totalPage = pdf.numPages;
-      updateButtonStates();
+    if (isMegnifier) {
+        this.style.backgroundColor = 'red';
+        zoomCanvas.style.display = 'block';
+    } else {
+        this.style.backgroundColor = '#EFEFEF';
+        zoomCanvas.style.display = 'none';
+    }
+});
 
-      pdf.getPage(pageNumber).then(function (page) {
-        const viewport = page.getViewport(3.0);
-        canvasEl.height = viewport.height;
-        canvasEl.width = viewport.width;
+document.querySelector("#color").addEventListener("change", /**
+ * Event listener for changing the line color.
+ * Updates the line color and logs the selected color to the console.
+ * @param {Event} e - The event object that triggered this function.
+ */
+function (e) {
+    lineColor = e.target.value;
+    console.log("lineColor: " + lineColor);
+})
 
-        page
-          .render({
-            canvasContext: canvasContext,
-            viewport: viewport,
-          })
-          .then(function () {
-            init();
-          });
-      });
-    });
-  };
-  fileReader.readAsArrayBuffer(pdfFile);
+const drawCross = (context, width, height) => {
+    context.strokeStyle = 'aqua';
+    context.lineWidth = 1;
+
+    // Set the line dash pattern for a dashed line
+    context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
+
+    context.beginPath();
+    context.moveTo(width / 2, 0);
+    context.lineTo(width / 2, height);
+    context.moveTo(0, height / 2);
+    context.lineTo(width, height / 2);
+    context.stroke();
+
+    // Reset the line dash to default (solid line) if needed
+    context.setLineDash([]);
 };
 
-previous.addEventListener("click", function () {
-  currentPage = currentPage - 1;
-  initFabricCanvas();
-  renderPdfToCanvas(currentPdfFile, currentPage);
+const renderPdfToCanvas = (pdfFile, pageNumber) => {
+    const fileReader = new FileReader();
+    fileReader.onload = function () {
+        const typedarray = new Uint8Array(this.result);
+
+        PDFJS.getDocument(typedarray).then(function (pdf) {
+            totalPage = pdf.numPages;
+            updateButtonStates();
+
+            pdf.getPage(pageNumber).then(function (page) {
+                const viewport = page.getViewport(4.0);
+                canvasEl.height = viewport.height;
+                canvasEl.width = viewport.width;
+
+                page
+                    .render({
+                        canvasContext: canvasContext,
+                        viewport: viewport,
+                    })
+                    .then(function () {
+                        init();
+                    });
+
+                return { page, viewport };
+            });
+        });
+    };
+    fileReader.readAsArrayBuffer(pdfFile);
+};
+
+previous.addEventListener("click", /**
+ * Function to handle the previous page button click event.
+ * Decrements the currentPage variable and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+    /**
+ * Function to handle the previous page button click event.
+ * Decrements the currentPage variable and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+function () {
+    currentPage = currentPage - 1; // Decrement the currentPage
+    initFabricCanvas(); // Initialize the fabric canvas
+    renderPdfToCanvas(currentPdfFile, currentPage); // Render the PDF on the canvas
 });
 
-next.addEventListener("click", function () {
-  currentPage = currentPage + 1;
-  initFabricCanvas();
-  renderPdfToCanvas(currentPdfFile, currentPage);
+next.addEventListener("click", /**
+ * Function to handle the next page button click event.
+ * Increases the currentPage variable by 1 and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+    /**
+ * Function to handle the next page button click event.
+ * Increases the currentPage value by 1 and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+function () {
+    currentPage = currentPage + 1;
+    initFabricCanvas();
+    renderPdfToCanvas(currentPdfFile, currentPage);
 });
-
-// reset.addEventListener('click', function (){
-//   // initFabricCanvas();
-//   fabricCanvas.dispose();
-//   renderPdfToCanvas(currentPdfFile , currentPage);
-// })
-
-// ctrl + r to rerender the page
-// document.addEventListener('keydown', function (event) {
-//   if (event.ctrlKey && event.key === 'r') {
-//     event.preventDefault(); // Prevent the default browser reload behavior
-//     renderPdfToCanvas(currentPdfFile, currentPage);
-//   }
-// });
 
 const updateButtonStates = () => {
-  previous.disabled = currentPage <= 1;
-  next.disabled = currentPage >= totalPage;
+    previous.disabled = currentPage <= 1;
+    next.disabled = currentPage >= totalPage;
 };
 
 const initFabricCanvas = () => {
-  if (fabricCanvas) {
-    fabricCanvas.clear();
-    fabricCanvas.dispose();
-  }
+    if (fabricCanvas) {
+        fabricCanvas.clear();
+        fabricCanvas.dispose();
+    }
 };
 
 const init = () => {
-  let groupLength = 0;
-  let isDrawing = false; // Flag to indicate whether a line is currently being drawn
-  let drawMode = false; // Flag to indicate whether the canvas is in draw mode
-  let isMoving = false; // Flag to indicate whether the user is drawing the line
-  let isAnyLineSelected = false; // Flag to indicate whether is any object is selected or not
-  let isDragging = false; // Flag to indicate whether the canvas is currently being dragged
-  let moveMode = true; // Flag to indicate whether the canvas is in move mode
+    let groupLength = 0;
+    let isDrawing = false; // Flag to indicate whether a line is currently being drawn
+    let drawMode = false; // Flag to indicate whether the canvas is in draw mode
+    let isMoving = false; // Flag to indicate whether the user is drawing the line
+    let isAnyLineSelected = false; // Flag to indicate whether is any object is selected or not
+    let isDragging = false; // Flag to indicate whether the canvas is currently being dragged
+    let moveMode = true; // Flag to indicate whether the canvas is in move mode
 
-  let line, startDivider, endDivider, lineLengthText, points;
+    let line, startDivider, endDivider, lineLengthText, points;
 
-  let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
-  let isCalibrationPointAAdded = false;
-  let isCalibrationPointBAdded = false;
-  let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
+    let realLineValue = 0;
 
-  let realLineValue = 0;
+    const bg = canvasEl.toDataURL("image/png");
+    fabricCanvas = new fabric.Canvas("pdfcanvas");
+    fabricCanvas.selection = false;
 
-  const bg = canvasEl.toDataURL("image/png");
-  fabricCanvas = new fabric.Canvas("pdfcanvas");
-  fabricCanvas.selection = false;
+    // * Print PDF into canvas as Image
+    fabric.Image.fromURL(bg, function (img) {
+        img.scaleToHeight(1123);
+        fabricCanvas.setHeight(1123); // customize canvasE1.width
+        fabricCanvas.setWidth(1588); // customize canvasE1.height
+        fabricCanvas.setBackgroundImage(
+            img,
+            fabricCanvas.renderAll.bind(fabricCanvas)
+        );
+    });
 
-  // * Print PDF into canvas as Image
-  fabric.Image.fromURL(bg, function (img) {
-    img.scaleToHeight(1123);
-    fabricCanvas.setHeight(1123); // customize canvasE1.width
-    fabricCanvas.setWidth(1588); // customize canvasE1.height
-    fabricCanvas.setBackgroundImage(
-      img,
-      fabricCanvas.renderAll.bind(fabricCanvas)
-    );
-  });
+    // * Draw line mouse down Event
+    fabricCanvas.on("mouse:down", function (o) {
+        if (isAnyLineSelected) return;
+        if (isCalibrationLineDrawn) return;
 
-  // fabric.Image.fromURL(bg, function (img) {
-  //   img.scaleToHeight(viewport);
-  //   fabricCanvas.setHeight(canvasEl.width);
-  //   fabricCanvas.setWidth(canvasEl.height);
-  //   fabricCanvas.setBackgroundImage(
-  //     img,
-  //     fabricCanvas.renderAll.bind(fabricCanvas)
-  //   );
-  // });
+        const evt = o.e;
+        const pointer = fabricCanvas.getPointer(evt);
+        points = [pointer.x, pointer.y, pointer.x, pointer.y];
 
-  // * Draw line mouse down Event
-  fabricCanvas.on("mouse:down", function (o) {
-    if (isAnyLineSelected) return;
-    if (isCalibrationLineDrawn) return;
+        if (calibrationMode) {
+            // message.style.display = "none";
+            const backgroundLayer = document.querySelector("#background-layer");
+            backgroundLayer.style.display = "none";
+            if (!isCalibrationPointAAdded) {
+                isMoving = true;
+                const { newLine, firstDivider, lastDivider, lineLength } = addLine({
+                    points,
+                    isInitialShowText: false,
+                });
+                line = newLine;
+                startDivider = firstDivider;
+                endDivider = lastDivider;
+                lineLengthText = lineLength;
+                fabricCanvas.add(line, startDivider, endDivider, lineLengthText);
+            } else if (isCalibrationPointAAdded && !isCalibrationPointBAdded) {
+                moveLine({
+                    line,
+                    lineLengthText,
+                    pointer,
+                    points: [line.x1, line.y1, line.x2, line.y2],
+                });
+                completeLine({ line });
+                fabricCanvas.renderAll();
+            }
+            return;
+        }
 
-    const evt = o.e;
-    const pointer = fabricCanvas.getPointer(evt);
-    points = [pointer.x, pointer.y, pointer.x, pointer.y];
+        if (drawMode) {
+            isDrawing = true;
 
-    if (calibrationMode) {
-      // message.style.display = "none";
-      const backgroundLayer = document.querySelector("#background-layer");
-      backgroundLayer.style.display = "none";
-      if (!isCalibrationPointAAdded) {
-        isMoving = true;
-        const { newLine, firstDivider, lastDivider, lineLength } = addLine({
-          points,
-          isInitialShowText: false,
-        });
-        line = newLine;
-        startDivider = firstDivider;
-        endDivider = lastDivider;
-        lineLengthText = lineLength;
-        fabricCanvas.add(line, startDivider, endDivider, lineLengthText);
-      } else if (isCalibrationPointAAdded && !isCalibrationPointBAdded) {
-        moveLine({
-          line,
-          lineLengthText,
-          pointer,
-          points: [line.x1, line.y1, line.x2, line.y2],
-        });
-        completeLine({ line });
-        fabricCanvas.renderAll();
-      }
-      return;
+            const { newLine, firstDivider, lastDivider, lineLength } = addLine({
+                points,
+            });
+
+            line = newLine;
+            startDivider = firstDivider;
+            endDivider = lastDivider;
+            lineLengthText = lineLength;
+            fabricCanvas.add(line, startDivider, endDivider, lineLengthText);
+        } else {
+            if (moveMode) {
+                isDragging = true;
+            }
+        }
+    });
+
+    // * Draw Line with shift key for straight line
+    fabricCanvas.on("mouse:move", function (o, e) {
+        if (isAnyLineSelected) return;
+        if (calibrationMode) return;
+
+        const evt = o.e;
+        // * Draw Line
+        if (drawMode && isDrawing) {
+            isMoving = true;
+            const pointer = fabricCanvas.getPointer(evt);
+            moveLine({ line, lineLengthText, pointer, points });
+            fabricCanvas.renderAll();
+        }
+        // * Move Canvas
+        if (isDragging) {
+            const dx = evt.movementX;
+            const dy = evt.movementY;
+            //* Move the canvas and all objects (lines) by the same amount
+            fabricCanvas.relativePan(new fabric.Point(dx, dy));
+            fabricCanvas.renderAll();
+        }
+
+        // * Magnifier
+        updateMagnifier(o)
+    });
+
+    fabricCanvas.on('mouse:out', () => {
+        if (isMegnifier) {
+            console.log('mouseLeave ------------------------------');
+            zoomCanvas.style.display = 'none';
+        }
+    });
+
+    fabricCanvas.on('mouse:over', () => {
+        if (isMegnifier) {
+            console.log('Mouse entered the canvas');
+            zoomCanvas.style.display = 'block';
+        }
+    });
+
+    function updateMagnifier(o) {
+        if (!isMegnifier) return
+
+        console.log("o", o)
+        const evt = o.e;
+        console.log("evt", evt)
+        const mLevel = 2; // Magnification level
+        const pointer = fabricCanvas.getPointer(evt);
+        const { width, height } = zoomCanvas;
+        const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
+
+        // Calculate zoomed area
+        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
+        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        const sw = width / (mLevel * zoom);
+        const sh = height / (mLevel * zoom);
+
+        // Update the position of zoomCanvas based on the cursor position
+        zoomCanvas.style.left = `${evt.clientX}px`;
+        zoomCanvas.style.top = `${evt.clientY}px`;
+
+        try {
+            zoomctx.clearRect(0, 0, width, height);
+            zoomctx.imageSmoothingEnabled = true;
+            zoomctx.drawImage(
+                fabricCanvas.lowerCanvasEl,
+                sx + left, sy + top, sw, sh, // Source rectangle
+                0, 0, width, height // Destination rectangle
+            );
+            drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+        } catch (error) {
+            console.log("Error drawing zoom:", error);
+        }
     }
-
-    if (drawMode) {
-      isDrawing = true;
-
-      const { newLine, firstDivider, lastDivider, lineLength } = addLine({
-        points,
-      });
-
-      line = newLine;
-      startDivider = firstDivider;
-      endDivider = lastDivider;
-      lineLengthText = lineLength;
-      fabricCanvas.add(line, startDivider, endDivider, lineLengthText);
-    } else {
-      if (moveMode) {
-        isDragging = true;
-      }
-    }
-  });
-
-  // * Draw Line with shift key for straight line
-  fabricCanvas.on("mouse:move", function (o) {
-    if (isAnyLineSelected) return;
-    if (calibrationMode) return;
-
-    const evt = o.e;
-    // * Draw Line
-    if (drawMode && isDrawing) {
-      isMoving = true;
-      const pointer = fabricCanvas.getPointer(evt);
-      moveLine({ line, lineLengthText, pointer, points });
-      fabricCanvas.renderAll();
-    }
-    // * Move Canvas
-    if (isDragging) {
-      const dx = evt.movementX;
-      const dy = evt.movementY;
-      //* Move the canvas and all objects (lines) by the same amount
-      fabricCanvas.relativePan(new fabric.Point(dx, dy));
-      fabricCanvas.renderAll();
-    }
-  });
 
     fabricCanvas.on("mouse:up", function (o) {
         if (isAnyLineSelected) return;
@@ -288,103 +399,102 @@ const init = () => {
         updateMagnifier(o)
     });
 
-  fabricCanvas.on("object:rotating", function (o) {
-    updateMinions(o.target);
-  });
+    fabricCanvas.on("object:rotating", function (o) {
+        updateMinions(o.target);
+        updateMagnifier(o)
+    });
 
-  fabricCanvas.on("object:scaling", function (o) {
-    updateMinions(o.target);
-  });
+    fabricCanvas.on("object:scaling", function (o) {
+        updateMinions(o.target);
+        updateMagnifier(o)
+    });
 
-  function handleLineObjectSelection(selectedLine) {
-    isAnyLineSelected = true;
+    function handleLineObjectSelection(selectedLine) {
+        isAnyLineSelected = true;
 
-    if (selectedLine && selectedLine.type === "line") {
-      const { x1, y1, x2, y2 } = selectedLine;
-      if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
-        //* Horizontal line
-        selectedLine.setControlsVisibility({
-          ml: true, //middle-left
-          //bottom-left
-          br: false, //bottom-right
-          mt: false, //middle-top
-          mb: false, //middle-bottom
-          mtr: true, //rotation-pointer
-          mr: true, //middle-right
-          tl: false, //top-left
-          tr: false, //top-right
-          bl: false,
-        });
-      } else {
-        //* Vertical line
-        selectedLine.setControlsVisibility({
-          tl: false, //top-left
-          tr: false, //top-right
-          ml: false, //middle-left
-          mr: false, //middle-right
-          bl: false, //bottom-left
-          br: false, //bottom-right
-          mt: true, //middle-top
-          mb: true, //middle-bottom
-          mtr: true, // rotate control
-        });
-      }
+        if (selectedLine && selectedLine.type === "line") {
+            const { x1, y1, x2, y2 } = selectedLine;
+            if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
+                //* Horizontal line
+                selectedLine.setControlsVisibility({
+                    ml: true, //middle-left
+                    //bottom-left
+                    br: false, //bottom-right
+                    mt: false, //middle-top
+                    mb: false, //middle-bottom
+                    mtr: true, //rotation-pointer
+                    mr: true, //middle-right
+                    tl: false, //top-left
+                    tr: false, //top-right
+                    bl: false,
+                });
+            } else {
+                //* Vertical line
+                selectedLine.setControlsVisibility({
+                    tl: false, //top-left
+                    tr: false, //top-right
+                    ml: false, //middle-left
+                    mr: false, //middle-right
+                    bl: false, //bottom-left
+                    br: false, //bottom-right
+                    mt: true, //middle-top
+                    mb: true, //middle-bottom
+                    mtr: true, // rotate control
+                });
+            }
 
-      // Right and wrong icon at side of calibrate line
-      if (isCalibrationLineDrawn && calibrationMode) {
-        fabric.Object.prototype.controls.deleteControl = new fabric.Control({
-          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
-          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
-          offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
-          offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
-
-          // offsetY: isHorizontal ? offsetYIfHorizontal : offsetYIfVertical,
-          // offsetX: isHorizontal ? offsetXIfHorizontal : offsetXIfVertical,
-          cursorStyle: "pointer",
-          mouseUpHandler: deleteObject,
-          render: renderdeleteIcon,
-          cornerSize: 24,
-        });
-        fabric.Object.prototype.controls.doneControl = new fabric.Control({
-          x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
-          y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
-          offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : -30,
-          offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 20,
-          cursorStyle: "pointer",
-          mouseUpHandler: doneObject,
-          render: renderDoneIcon,
-          cornerSize: 24,
-        });
-      } else {
-        if (selectedLine.controls.deleteControl)
-          delete selectedLine.controls.deleteControl;
-        if (selectedLine.controls.doneControl)
-          delete selectedLine.controls.doneControl;
-      }
-      fabricCanvas.renderAll();
+            // Right and wrong icon at side of calibrate line
+            if (isCalibrationLineDrawn && calibrationMode) {
+                fabric.Object.prototype.controls.deleteControl = new fabric.Control({
+                    x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+                    y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+                    offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
+                    offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
+                    cursorStyle: "pointer",
+                    mouseUpHandler: deleteObject,
+                    render: renderdeleteIcon,
+                    cornerSize: 24,
+                });
+                fabric.Object.prototype.controls.doneControl = new fabric.Control({
+                    x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+                    y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+                    offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : -30,
+                    offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 20,
+                    cursorStyle: "pointer",
+                    mouseUpHandler: doneObject,
+                    render: renderDoneIcon,
+                    cornerSize: 24,
+                });
+            } else {
+                if (selectedLine.controls.deleteControl)
+                    delete selectedLine.controls.deleteControl;
+                if (selectedLine.controls.doneControl)
+                    delete selectedLine.controls.doneControl;
+            }
+            fabricCanvas.renderAll();
+        }
     }
-  }
 
-  function deleteObject() {
-    if (confirm("Are you sure you want to delete this line?")) {
-      removeLine(line);
+    function deleteObject() {
+        if (confirm("Are you sure you want to delete this line?")) {
+            removeLine(line);
 
-      message.style.display = "none";
-      document.getElementById("popup").style.display = "none";
-      document.getElementById("calibration-btn").style.backgroundColor =
-        "#EFEFEF";
+            message.style.display = "none";
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibration-btn").style.backgroundColor =
+                "#EFEFEF";
+        }
+        resetCalibrationState();
     }
-    resetCalibrationState();
-  }
 
-  function renderdeleteIcon(ctx, left, top, styleOverride, fabricObject) {
-    const size = this.cornerSize;
-    ctx.save();
-    ctx.translate(left, top);
-    ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-    ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  }
+    function renderdeleteIcon(ctx, left, top, styleOverride, fabricObject) {
+        const size = this.cornerSize;
+        ctx.save();
+        ctx.translate(left, top);
+        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    }
 
     function doneObject() {
         document.getElementById("popup").style.display = "flex";
@@ -394,14 +504,14 @@ const init = () => {
             lengthText.toFixed(2) + "px";
     }
 
-  function renderDoneIcon(ctx, left, top, styleOverride, fabricObject) {
-    const size = this.cornerSize;
-    ctx.save();
-    ctx.translate(left, top);
-    ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-    ctx.drawImage(doneImg, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  }
+    function renderDoneIcon(ctx, left, top, styleOverride, fabricObject) {
+        const size = this.cornerSize;
+        ctx.save();
+        ctx.translate(left, top);
+        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        ctx.drawImage(doneImg, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    }
 
     function convertRealLineLength(realLineValue, realLineValueUnit) {
         const inchesToPixels = 96;
@@ -442,263 +552,220 @@ const init = () => {
         fabricCanvas.renderAll();
     }
 
-  /**
-   * @param {*} event
-   * @param {*} type (in | out)
-   */
-  function handleZoom(event, type) {
-    event.preventDefault();
-    const zoomFactor = 0.2;
-    let zoom = fabricCanvas.getZoom();
-    type === "in" && (zoom += zoomFactor);
-    type === "out" && (zoom -= zoomFactor);
-    zoom = Math.min(Math.max(zoom, 0.5), 8);
-    fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
-    // fabricCanvas.setZoom(zoom);
-    fabricCanvas.renderAll();
-  }
-
-  /**
-   * Function to reset the calibration state.
-   * Sets the move mode to true, calibration mode to false, and the flags for drawing calibration lines and points to false.
-   * @returns {void}
-   */
-  function resetCalibrationState() {
-    moveMode = true;
-    calibrationMode = false;
-    isCalibrationLineDrawn = false;
-    isCalibrationPointAAdded = false;
-    isCalibrationPointBAdded = false;
-  }
-
-  //* ---------> manage zoom on mouse and keyboard start ---------->
-
-  // * Button event for draw line
-  toggleDrawBtn.addEventListener("click", function () {
-    drawMode = !drawMode;
-    moveMode = !moveMode;
-    this.textContent = drawMode ? "Measure on" : "Measure";
-
-    fabricCanvas.forEachObject(function (obj) {
-      obj.selectable = !drawMode;
-    });
-  });
-
-  document.addEventListener("keydown", (event) => {
-    // *Key board ctrl + (+) or (-)
-    if (
-      (event.ctrlKey && event.code === "Equal") ||
-      (event.ctrlKey && event.code === "NumpadAdd")
-    ) {
-      handleZoom(event, "in");
-    } else if (
-      (event.ctrlKey && event.code === "Minus") ||
-      (event.ctrlKey && event.code === "NumpadSubtract")
-    ) {
-      handleZoom(event, "out");
-    } else if (event.key === "Delete") {
-      // Delete the selected object (line)
-      const activeObject = fabricCanvas.getActiveObject();
-      if (activeObject && activeObject.type === "line") {
-        activeObject.minions.forEach((minion) => {
-          fabricCanvas.remove(minion);
-        });
-        fabricCanvas.remove(activeObject);
+    function handleZoom(event, type) {
+        event.preventDefault();
+        let zoomFactor = 0.2;
+        zoom = fabricCanvas.getZoom();
+        console.log("zoom factor :", zoom);
+        type === "in" && (zoom += zoomFactor);
+        type === "out" && (zoom -= zoomFactor);
+        zoom = Math.min(Math.max(zoom, 0.5), 8);
+        fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
+        // fabricCanvas.setZoom(zoom);
         fabricCanvas.renderAll();
-      }
     }
-  });
 
-  // * Ctrl + wheel (up) or (down)
-  document.addEventListener(
-    "wheel",
-    function (event) {
-      if (event.deltaY < 0 && event.ctrlKey) {
-        //* ctrl + Scroll UP (Zoom In)
-        handleZoom(event, "in");
-      } else if (event.deltaY > 0 && event.ctrlKey) {
-        //* ctrl + Scroll Down (Zoom Out)
-        handleZoom(event, "out");
-      }
-    },
-    { passive: false }
-  );
+    function resetCalibrationState() {
+        moveMode = true;
+        calibrationMode = false;
+        isCalibrationLineDrawn = false;
+        isCalibrationPointAAdded = false;
+        isCalibrationPointBAdded = false;
+    }
 
-  // * (+) button click
-  document
-    .querySelector("#zoom-in")
-    .addEventListener("click", (event) => handleZoom(event, "in"));
+    //* ---------> manage zoom on mouse and keyboard start ---------->
 
-  // * (-) button click
-  document
-    .querySelector("#zoom-out")
-    .addEventListener("click", (event) => handleZoom(event, "out"));
-
-  //* <--------- manage zoom on mouse and keyboard End <---------
-
-  // * Event listeners for wheel event for panning
-  document.addEventListener(
-    "wheel",
-    function (event) {
-      if (event.ctrlKey) return;
-
-      if (event.shiftKey || event.metaKey) {
-        // Horizontal scrolling when Shift key is pressed
-        const delta = Math.sign(event.deltaY) * 30;
-        fabricCanvas.relativePan(new fabric.Point(delta, 0));
-      } else {
-        // Vertical scrolling otherwise
-        const delta = Math.sign(event.deltaY) * -30;
-        fabricCanvas.relativePan(new fabric.Point(0, delta));
-      }
-      event.preventDefault();
-    },
-    { passive: false }
-  );
-
-  //* button event the set the calibration
-  if (calibrationPoint === 1) {
-    document
-      .querySelector("#calibration-btn")
-      .addEventListener("click", function () {
-        clearCalibration();
-
-        calibrationMode = true;
-        moveMode = false;
-
-        calibrationMode
-          ? (this.style.backgroundColor = "green")
-          : (this.style.backgroundColor = "#EFEFEF");
-
-        let message = document.getElementById("message");
-        message.style.display = "block"; // Show the message
-
-        const backgroundLayer = document.querySelector("#background-layer");
-        backgroundLayer.style.display = "block";
-        backgroundLayer.style.backgroundColor = "#3f85ef61";
+    // * Button event for draw line
+    toggleDrawBtn.addEventListener("click", function () {
+        drawMode = !drawMode;
+        moveMode = !moveMode;
+        this.textContent = drawMode ? "Measure on" : "Measure";
 
         fabricCanvas.forEachObject(function (obj) {
-          obj.selectable = !drawMode;
+            obj.selectable = !drawMode;
         });
-      });
-  } else {
-    alert("calibration point is already set");
-  }
+    });
 
-  //* Button event to set the calibration point
-  document
-    .querySelector("#setCalibration-value-btn")
-    .addEventListener("click", function () {
-      realLineValueUnit = document.getElementById("realLengthUnitSelect").value;
-
-      if (realLineValueUnit === "ftin") {
-        realLineValue = document.getElementById("realLineLengthValue").value;
-
-        // match = /^(\d+)'\-(\d+(?:\.\d*)?)"$/.exec(realLineValue);
-        match = /^(\d+)'\-(\d+)"$/.exec(realLineValue); // 10'-00"
-        match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
-        match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
-        match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
-        if (match) {
-          feet = parseInt(match[1], 10);
-          inches = parseInt(match[2], 10);
-          realLineValue = feet + "-" + inches;
-        } else if (match1) {
-          feet = parseInt(match1[1], 10);
-          inches = parseInt(match1[2], 10);
-          realLineValue = feet + "-" + inches;
-        } else if (match2) {
-          feet = parseInt(match2[1], 10);
-          inches = parseInt(match2[2], 10);
-          realLineValue = feet + "-" + inches;
-        } else if (match3) {
-          feet = parseInt(match3[1], 10);
-          inches = parseInt(match3[2], 10);
-          realLineValue = feet + "-" + inches;
-        } else {
-          alert("Value must be in the format 00'-00\" or 00'00\" ");
-          return;
+    document.addEventListener("keydown", (event) => {
+        // *Key board ctrl + (+) or (-)
+        if (
+            (event.ctrlKey && event.code === "Equal") ||
+            (event.ctrlKey && event.code === "NumpadAdd")
+        ) {
+            handleZoom(event, "in");
+        } else if (
+            (event.ctrlKey && event.code === "Minus") ||
+            (event.ctrlKey && event.code === "NumpadSubtract")
+        ) {
+            handleZoom(event, "out");
+        } else if (event.key === "Delete") {
+            // Delete the selected object (line)
+            const activeObject = fabricCanvas.getActiveObject();
+            if (activeObject && activeObject.type === "line") {
+                activeObject.minions.forEach((minion) => {
+                    fabricCanvas.remove(minion);
+                });
+                fabricCanvas.remove(activeObject);
+                fabricCanvas.renderAll();
+            }
         }
-      } else {
-        realLineValue = document.getElementById("realLineLengthValue").value;
-      }
-
-      const realLineLengthValue = convertRealLineLength(
-        realLineValue,
-        realLineValueUnit
-      );
-      const pdfLineLengthValue = updateMinions(line);
-
-      countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
-
-      document.getElementById("popup").style.display = "none";
-      document.getElementById("calibration-btn").style.backgroundColor =
-        "#EFEFEF";
-
-      resetCalibrationState();
-      removeLine(line);
-      fabricCanvas.discardActiveObject(line);
     });
 
-  //* Button event the close the popup box
-  document
-    .querySelector("#popup-close-btn")
-    .addEventListener("click", function () {
-      resetCalibrationState();
+    // * Ctrl + wheel (up) or (down)
+    document.addEventListener(
+        "wheel",
+        function (event) {
+            if (event.deltaY < 0 && event.ctrlKey) {
+                //* ctrl + Scroll UP (Zoom In)
+                handleZoom(event, "in");
+            } else if (event.deltaY > 0 && event.ctrlKey) {
+                //* ctrl + Scroll Down (Zoom Out)
+                handleZoom(event, "out");
+            }
+        },
+        { passive: false }
+    );
 
-      document.getElementById("popup").style.display = "none";
-      document.getElementById("calibration-btn").style.backgroundColor =
-        "#EFEFEF";
-      removeLine(line);
-    });
+    // * (+) button click
+    document
+        .querySelector("#zoom-in")
+        .addEventListener("click", (event) => handleZoom(event, "in"));
 
-  function clearCalibration() {
-    isCalibrationLineDrawn = false;
-    isCalibrationPointAAdded = false;
-    isCalibrationPointBAdded = false;
-    calibrationPoint = 1;
-    realLineValue = 0;
-    pdfLineValue = 0;
-    realLineValueUnit = "";
-  }
+    // * (-) button click
+    document
+        .querySelector("#zoom-out")
+        .addEventListener("click", (event) => handleZoom(event, "out"));
 
-  // message check button functionaity to close message box
-  document
-    .querySelector("#messagecheck")
-    .addEventListener("click", function (e) {
-      message = document.getElementById("message");
-      message.style.display = "none";
-    });
+    //* <--------- manage zoom on mouse and keyboard End <---------
 
-  // download the pdf page
-  // document
-  //   .querySelector("#download-pdf")
-  //   .addEventListener("click", async function () {
-  //     // const fabricCanvas = document.querySelector("canvas").fabric;
-  //     const dataUrl = fabricCanvas.toDataURL({
-  //       format: "png",
-  //       multiplier: 2, // adjust the resolution if needed
-  //     });
+    // * Event listeners for wheel event for panning
+    document.addEventListener(
+        "wheel",
+        function (event) {
+            if (event.ctrlKey) return;
 
-  //     const pdfDoc = await PDFLib.PDFDocument.create();
-  //     const page = pdfDoc.addPage([canvasEl.width, canvasEl.height]);
-  //     const pngImage = await pdfDoc.embedPng(dataUrl);
-  //     page.drawImage(pngImage, {
-  //       x: 0,
-  //       y: 0,
-  //       width: canvasEl.width,
-  //       height: canvasEl.height,
-  //     });
+            if (event.shiftKey || event.metaKey) {
+                const delta = Math.sign(event.deltaY) * 30;
+                fabricCanvas.relativePan(new fabric.Point(delta, 0));
+            } else {
+                const delta = Math.sign(event.deltaY) * -30;
+                fabricCanvas.relativePan(new fabric.Point(0, delta));
+            }
+            event.preventDefault();
+        },
+        { passive: false }
+    );
 
-  //     const pdfBytes = await pdfDoc.save();
-  //     const blob = new Blob([pdfBytes], { type: "application/pdf" });
-  //     const url = URL.createObjectURL(blob);
-  //     const link = document.createElement("a");
-  //     link.href = url;
-  //     link.download = "modified.pdf";
-  //     link.click();
-  //     URL.revokeObjectURL(url);
-  //   });
+    //* button event the set the calibration
+    if (calibrationPoint === 1) {
+        document
+            .querySelector("#calibration-btn")
+            .addEventListener("click", function () {
+                clearCalibration();
+
+                calibrationMode = true;
+                moveMode = false;
+
+                calibrationMode
+                    ? (this.style.backgroundColor = "green")
+                    : (this.style.backgroundColor = "#EFEFEF");
+
+                let message = document.getElementById("message");
+                message.style.display = "block"; // Show the message
+
+                const backgroundLayer = document.querySelector("#background-layer");
+                backgroundLayer.style.display = "block";
+                backgroundLayer.style.backgroundColor = "#3f85ef61";
+
+                fabricCanvas.forEachObject(function (obj) {
+                    obj.selectable = !drawMode;
+                });
+            });
+    } else {
+        alert("calibration point is already set");
+    }
+
+    //* Button event to set the calibration point
+    document
+        .querySelector("#setCalibration-value-btn")
+        .addEventListener("click", function () {
+            realLineValueUnit = document.getElementById("realLengthUnitSelect").value;
+
+            if (realLineValueUnit === "ftin") {
+                realLineValue = document.getElementById("realLineLengthValue").value;
+                match = /^(\d+)'\-(\d+)"$/.exec(realLineValue); // 10'-00"
+                match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
+                match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
+                match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
+                if (match) {
+                    feet = parseInt(match[1], 10);
+                    inches = parseInt(match[2], 10);
+                    realLineValue = feet + "-" + inches;
+                } else if (match1) {
+                    feet = parseInt(match1[1], 10);
+                    inches = parseInt(match1[2], 10);
+                    realLineValue = feet + "-" + inches;
+                } else if (match2) {
+                    feet = parseInt(match2[1], 10);
+                    inches = parseInt(match2[2], 10);
+                    realLineValue = feet + "-" + inches;
+                } else if (match3) {
+                    feet = parseInt(match3[1], 10);
+                    inches = parseInt(match3[2], 10);
+                    realLineValue = feet + "-" + inches;
+                } else {
+                    alert("Value must be in the format 00'-00\" or 00'00\" ");
+                    return;
+                }
+            } else {
+                realLineValue = document.getElementById("realLineLengthValue").value;
+            }
+
+            const realLineLengthValue = convertRealLineLength(
+                realLineValue,
+                realLineValueUnit
+            );
+            const pdfLineLengthValue = updateMinions(line);
+
+            countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
+
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibration-btn").style.backgroundColor =
+                "#EFEFEF";
+
+            resetCalibrationState();
+            removeLine(line);
+            fabricCanvas.discardActiveObject(line);
+        });
+
+    //* Button event the close the popup box
+    document
+        .querySelector("#popup-close-btn")
+        .addEventListener("click", function () {
+            resetCalibrationState();
+
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibration-btn").style.backgroundColor =
+                "#EFEFEF";
+            removeLine(line);
+        });
+
+    function clearCalibration() {
+        isCalibrationLineDrawn = false;
+        isCalibrationPointAAdded = false;
+        isCalibrationPointBAdded = false;
+        calibrationPoint = 1;
+        realLineValue = 0;
+        pdfLineValue = 0;
+        realLineValueUnit = "";
+    }
+
+    document
+        .querySelector("#messagecheck")
+        .addEventListener("click", function (e) {
+            message = document.getElementById("message");
+            message.style.display = "none";
+        });
 };
 
 const displayFileName = () => {
@@ -710,41 +777,32 @@ const displayFileName = () => {
 };
 
 /**
- * Function to update the text representing the length of a line.
- * @param {Object} line - The line for which the length text is being updated.
- * @param {Object} text - The text object representing the length of the line.
- * @returns {void}
+ * Updates the text of the line length on the canvas.
+ *
+ * @param {fabric.Line} line - The line object to update the text for.
+ * @param {fabric.Text} text - The text object to update with the line length.
+ *
+ * @returns {undefined}
  */
 function updateLineLengthText(line, text) {
-  // Calculate the length of the line
-  const length = calculateLineLength(line);
+    const length = calculateLineLength(line);
 
-  // Calculate the center coordinates of the line
-  const centerX = (line.x1 + line.x2) / 2;
-  const centerY = (line.y1 + line.y2) / 2;
-
-  // Set the text of the length text object
-  // Convert the length to the appropriate unit and format
-  text.set({
-    left: centerX,
-    top: centerY,
-    text: `${convertPixelLength(
-      length,
-      realLineValueUnit === "" ? "px" : realLineValueUnit
-    )}`,
-  });
+    const centerX = (line.x1 + line.x2) / 2;
+    const centerY = (line.y1 + line.y2) / 2;
+    text.set({
+        left: centerX,
+        top: centerY,
+        text: `${convertPixelLength(
+            length,
+            realLineValueUnit === "" ? "px" : realLineValueUnit
+        )}`,
+    });
 }
-
-/**
- * Function to add a new line to the canvas.
- * @param {Object} options - The options for creating the line.
- * @returns {Object} - The new line, its start divider, end divider, and line length text.
- */
 const addLine = ({ points, isInitialShowText }) => {
     let newLine = new fabric.Line(points, {
         strokeWidth: 0.3,
-        fill: "black",
-        stroke: "black",
+        fill: calibrationMode ? "black" : lineColor,
+        stroke: calibrationMode ? "black" : lineColor,
         originX: "center",
         originY: "center",
         selectable: false,
@@ -753,531 +811,397 @@ const addLine = ({ points, isInitialShowText }) => {
         lockSkewingY: true,
     });
 
-  const startDivider = makeDivider(
-    newLine.get("x1"),
-    newLine.get("y1"),
-    newLine
-  );
-  const endDivider = makeDivider(newLine.get("x2"), newLine.get("y2"), newLine);
+    const startDivider = makeDivider(
+        newLine.get("x1"),
+        newLine.get("y1"),
+        newLine
+    );
+    const endDivider = makeDivider(newLine.get("x2"), newLine.get("y2"), newLine);
 
-  let lineLengthText = makeLineLengthText(newLine);
+    let lineLengthText = makeLineLengthText(newLine);
 
-  newLine.minions = [startDivider, endDivider, lineLengthText];
+    newLine.minions = [startDivider, endDivider, lineLengthText];
 
-  return {
-    newLine,
-    firstDivider: startDivider,
-    lastDivider: endDivider,
-    lineLength: lineLengthText,
-  };
+    return {
+        newLine,
+        firstDivider: startDivider,
+        lastDivider: endDivider,
+        lineLength: lineLengthText,
+    };
 };
 
-/**
- * Function to handle the mouse move event while drawing a line.
- * @param {Object} options - The options for moving the line.
- * @param {Object} options.line - The line being moved.
- * @param {Object} options.pointer - The current pointer position.
- * @param {Array} options.points - The initial points of the line.
- * @param {Object} options.lineLengthText - The text object representing the length of the line.
- * @returns {void}
- */
 const moveLine = ({ line, pointer, points, lineLengthText }) => {
-  const dx = Math.abs(pointer.x - points[0]);
-  const dy = Math.abs(pointer.y - points[1]);
-  const [startDivider, endDivider] = line.minions;
-
-  // Determine the direction of the line based on the movement of the mouse
-  if (dx > dy) {
-    points[2] = pointer.x;
-    points[3] = points[1];
-  } else {
-    points[2] = points[0];
-    points[3] = pointer.y;
-  }
-
-  // Update the line's coordinates
-  line.set({
-    x2: points[2],
-    y2: points[3],
-  });
-
-  // Update the text representing the length of the line
-  updateLineLengthText(line, lineLengthText);
-
-  // Update the position and angle of the end divider
-  endDivider.set({ left: points[2], top: points[3] });
-  endDivider.set({
-    left: points[2],
-    top: points[3],
-    angle: calculatePerpendicularAngle(
-      points[0],
-      points[1],
-      points[2],
-      points[3]
-    ),
-  });
-
-  // Update the position and angle of the start divider
-  startDivider.set({
-    angle: calculatePerpendicularAngle(
-      points[0],
-      points[1],
-      points[2],
-      points[3]
-    ),
-  });
+    const dx = Math.abs(pointer.x - points[0]);
+    const dy = Math.abs(pointer.y - points[1]);
+    const [startDivider, endDivider] = line.minions;
+    if (dx > dy) {
+        points[2] = pointer.x;
+        points[3] = points[1];
+    } else {
+        points[2] = points[0];
+        points[3] = pointer.y;
+    }
+    line.set({
+        x2: points[2],
+        y2: points[3],
+    });
+    updateLineLengthText(line, lineLengthText);
+    endDivider.set({ left: points[2], top: points[3] });
+    endDivider.set({
+        left: points[2],
+        top: points[3],
+        angle: calculatePerpendicularAngle(
+            points[0],
+            points[1],
+            points[2],
+            points[3]
+        ),
+    });
+    startDivider.set({
+        angle: calculatePerpendicularAngle(
+            points[0],
+            points[1],
+            points[2],
+            points[3]
+        ),
+    });
 };
 
-/**
- * Function to handle the completion of drawing a line.
- * Sets the line as selectable and evented, and updates the position and angle of the dividers.
- * @param {Object} options - The options for completing the line.
- * @param {Object} options.line - The line being completed.
- * @returns {void}
- */
 const completeLine = ({ line }) => {
-  const [startDivider, endDivider] = line.minions;
-
-  // Set the line as selectable and evented
-  line.setCoords();
-  line.set({
-    selectable: true,
-    evented: true,
-  });
-
-  // Update the position of the start divider
-  startDivider.setCoords();
-  startDivider.set({
-    selectable: false,
-    evented: false,
-    angle: calculatePerpendicularAngle(
-      line.get("x1"),
-      line.get("y1"),
-      line.get("x2"),
-      line.get("y2")
-    ),
-  });
-
-  // Update the position of the end divider
-  endDivider.setCoords();
-  endDivider.set({
-    selectable: false,
-    evented: false,
-    angle: calculatePerpendicularAngle(
-      line.get("x1"),
-      line.get("y1"),
-      line.get("x2"),
-      line.get("y2")
-    ),
-  });
-
-  // Set the relationship between the line and its minions
-  setRelationship(line);
+    const [startDivider, endDivider] = line.minions;
+    line.setCoords();
+    line.set({
+        selectable: true,
+        evented: true,
+    });
+    startDivider.setCoords();
+    startDivider.set({
+        selectable: false,
+        evented: false,
+        angle: calculatePerpendicularAngle(
+            line.get("x1"),
+            line.get("y1"),
+            line.get("x2"),
+            line.get("y2")
+        ),
+    });
+    endDivider.setCoords();
+    endDivider.set({
+        selectable: false,
+        evented: false,
+        angle: calculatePerpendicularAngle(
+            line.get("x1"),
+            line.get("y1"),
+            line.get("x2"),
+            line.get("y2")
+        ),
+    });
+    setRelationship(line);
 };
 
 /**
- * Function to remove a line from the canvas.
- * Removes the line and its associated minions (dividers and text) from the canvas.
- * @param {Object} line - The line to be removed.
- * @returns {void}
+ * Removes a line from the canvas and its associated minions (dividers and text).
+ *
+ * @param {fabric.Line} line - The line object to remove.
+ *
+ * @returns {undefined}
  */
 function removeLine(line) {
-  // Iterate over the minions (dividers and text) of the line
-  line.minions.forEach((minion) => {
-    // Remove each minion from the canvas
-    fabricCanvas.remove(minion);
-  });
+    // Iterate through the minions (dividers and text) associated with the line
+    line.minions.forEach((minion) => {
+        // Remove each minion from the canvas
+        fabricCanvas.remove(minion);
+    });
 
-  // Remove the line from the canvas
-  fabricCanvas.remove(line);
+    // Remove the line from the canvas
+    fabricCanvas.remove(line);
 
-  // Render the canvas to update the changes
-  fabricCanvas.renderAll();
+    // Render the canvas to reflect the changes
+    fabricCanvas.renderAll();
 }
 
 /**
- * Function to create a divider (rectangle) for a line.
- * @param {number} left - The x-coordinate of the divider's position.
- * @param {number} top - The y-coordinate of the divider's position.
- * @param {Object} line - The line to which the divider is associated.
- * @returns {Object} - The created divider.
+ * Creates a divider object for the line.
+ *
+ * @param {number} left - The x-coordinate of the divider.
+ * @param {number} top - The y-coordinate of the divider.
+ * @param {fabric.Line} line - The line object to associate with the divider.
+ *
+ * @returns {fabric.Rect} - The divider object.
+ */
+/**
+ * Creates a divider object for the line.
+ *
+ * @param {number} left - The x-coordinate of the divider.
+ * @param {number} top - The y-coordinate of the divider.
+ * @param {fabric.Line} line - The line object to associate with the divider.
+ *
+ * @returns {fabric.Rect} - The divider object.
  */
 function makeDivider(left, top, line) {
-  const divider = new fabric.Rect({
-    left: left,
-    top: top,
-    width: 15,
-    height: 0.5,
-    fill: "#666",
-    originX: "center",
-    originY: "center",
-    selectable: false,
-    evented: false,
-    // id: groupLength,
-    // name: `group-${groupLength}-divider`,
-  });
-  divider.hasControls = divider.hasBorders = false;
-  divider.line = line;
-  return divider;
+    const divider = new fabric.Rect({
+        strokeWidth: 0.1,
+        stroke: calibrationMode ? "black" : lineColor,
+        left: left,
+        top: top,
+        width: 10,
+        height: 0.5,
+        fill: "#666",
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+    });
+    divider.hasControls = divider.hasBorders = false;
+    divider.line = line;
+    return divider;
 }
 
 /**
- * Function to create a text object representing the length of a line.
- * @param {Object} line - The line for which the length text is being created.
- * @returns {Object} - The created text object representing the length of the line.
+ * Creates a text object for the line length on the canvas.
+ *
+ * @param {fabric.Line} line - The line object to associate with the text.
+ *
+ * @returns {fabric.Text} - The text object for the line length.
+ */
+/**
+ * Creates a text object for the line length on the canvas.
+ *
+ * @param {fabric.Line} line - The line object to associate with the text.
+ *
+ * @returns {fabric.Text} - The text object for the line length.
  */
 function makeLineLengthText(line) {
-  const text = new fabric.Text("", {
-    fontSize: 6,
-    height: 10,
-    fontFamily: "Candara Light",
-    fontWeight: 1000,
-    fill: "#000",
-    originX: "center",
-    originY: "center",
-    selectable: false,
-    evented: false,
-    backgroundColor: "white",
-    // id: groupLength,
-    // name: `group-${groupLength}-text`,
-  });
+    const text = new fabric.Text("", {
+        fontSize: 6,
+        height: 10,
+        fontFamily: "Candara Light",
+        fontWeight: 1000,
+        fill: "#000",
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+        backgroundColor: "white",
+    });
 
-  // Update the text with the current length of the line
-  updateLineLengthText(line, text);
+    // Update the text with the line length
+    updateLineLengthText(line, text);
 
-  return text;
+    return text;
 }
 
 /**
- * Function to calculate the length of a line.
- * @param {Object} line - The line for which the length is being calculated.
- * @returns {number} - The length of the line, taking into account the calibration point.
+ * Calculates the length of a line in pixels, taking into account the calibration point.
+ *
+ * @param {fabric.Line} line - The line object for which to calculate the length.
+ *
+ * @returns {number} - The length of the line in pixels, adjusted for the calibration point.
+ */
+/**
+ * Calculates the length of a line in pixels, taking into account the calibration point.
+ *
+ * @param {fabric.Line} line - The line object for which to calculate the length.
+ *
+ * @returns {number} - The length of the line in pixels, adjusted for the calibration point.
  */
 function calculateLineLength(line) {
-  const dx = line.x2 - line.x1;
-  const dy = line.y2 - line.y1;
-  return Math.sqrt(dx * dx + dy * dy) * calibrationPoint;
+    const dx = line.x2 - line.x1;
+    const dy = line.y2 - line.y1;
+    return Math.sqrt(dx * dx + dy * dy) * calibrationPoint;
 }
 
 /**
- * Function to convert pixel length to the specified unit.
+ * Converts a pixel length to the specified real-world unit, taking into account the calibration point.
+ *
  * @param {number} pixelValue - The length in pixels.
- * @param {string} realLineValueUnit - The unit to convert to.
- * @returns {string|number} - The length in the specified unit, rounded to two decimal places.
- * If the unit is 'ftin', returns the length in feet and inches.
+ * @param {string} realLineValueUnit - The real-world unit to convert to.
+ *
+ * @returns {string|number} - The length in the specified real-world unit, adjusted for the calibration point.
+ * If the unit is 'ftin', it returns a string in the format '00'-00"'.
+ * Otherwise, it returns a number rounded to two decimal places.
  */
 function convertPixelLength(pixelValue, realLineValueUnit) {
-  const pixelsToInches = 1 / 96;
-  const pixelsToMm = 304.8 / 1151.9999999832; // 1 pixel = (25.4 / 96) mm
-  const pixelsToCm = 30.48 / 1151.9999999832; // 1 pixel = (2.54 / 96) cm
-  const pixelsToM = 0.3048 / 1151.9999999832; // 1 pixel = (0.0254 / 96) m
-  const pixelsToFt = 1 / 1151.9999999832; // 1 pixel = (1 / 1151.9999999832) ft
+    const pixelsToInches = 1 / 96;
+    const pixelsToMm = 304.8 / 1151.9999999832; // 1 pixel = (25.4 / 96) mm
+    const pixelsToCm = 30.48 / 1151.9999999832; // 1 pixel = (2.54 / 96) cm
+    const pixelsToM = 0.3048 / 1151.9999999832; // 1 pixel = (0.0254 / 96) m
+    const pixelsToFt = 1 / 1151.9999999832; // 1 pixel = (1 / 1151.9999999832) ft
 
-  let result = pixelValue;
-  switch (realLineValueUnit) {
-    case "ft":
-      result = pixelValue * pixelsToFt;
-      break;
-    case "ftin":
-      const precisionvalue = document.getElementById("pre").value;
-      const totalInches = pixelValue * pixelsToInches;
-      const feet = Math.floor(totalInches / 12);
-      const inches = totalInches % 12;
-      const preciosion = inches - Math.floor(inches);
-      const quarter = precisionvalue.split("/")[1];
-      // const quarter = precisionvalue.split("/")[2];
-      const fraction = getFraction(preciosion, quarter);
-      fraction === ` ${quarter} / ${quarter}`;
-
-      // function getFraction(decimal, denominator) {
-      //   const numerator = Math.round(decimal * denominator);
-      //   return `${numerator}/${denominator}`;
-      // }
-
-      //console.log(quarter);
-      const ans = preciosion <= 0.1 ? " " : fraction;
-      result = `${feet}'-${inches.toFixed(0)} ${ans}"`;
-      break;
-    case "mm":
-      result = pixelValue * pixelsToMm;
-      break;
-    case "cm":
-      result = pixelValue * pixelsToCm;
-      break;
-    case "m":
-      result = pixelValue * pixelsToM;
-      break;
-    default:
-      result = pixelValue;
-      break;
-  }
-  if (realLineValueUnit === "ftin") {
-    return result;
-  } else {
-    return result.toFixed(2);
-  }
+    let result = pixelValue;
+    switch (realLineValueUnit) {
+        case "ft":
+            result = pixelValue * pixelsToFt;
+            break;
+        case "ftin":
+            const precisionvalue = document.getElementById("pre").value;
+            const totalInches = pixelValue * pixelsToInches;
+            const feet = Math.floor(totalInches / 12);
+            const inches = totalInches % 12;
+            const preciosion = inches - Math.floor(inches);
+            const quarter = precisionvalue.split("/")[1];
+            const fraction = getFraction(preciosion, quarter);
+            fraction === ` ${quarter} / ${quarter}`;
+            const ans = preciosion <= 0.1 ? " " : fraction;
+            result = `${feet}'-${inches.toFixed(0)} ${ans}"`;
+            break;
+        case "mm":
+            result = pixelValue * pixelsToMm;
+            break;
+        case "cm":
+            result = pixelValue * pixelsToCm;
+            break;
+        case "m":
+            result = pixelValue * pixelsToM;
+            break;
+        default:
+            result = pixelValue;
+            break;
+    }
+    if (realLineValueUnit === "ftin") {
+        return result;
+    } else {
+        return result.toFixed(2);
+    }
 }
+
 /**
- * Function to get the fraction part of a decimal number.
- * @param {number} value - The decimal number.
- * @param {number} quarters - The number of quarters to divide the decimal number into.
- * @returns {string} - The fraction part of the decimal number in the format of "numerator/denominator".
+ * Calculates the fraction of a value based on the number of quarters.
+ *
+ * @param {number} value - The value to calculate the fraction for.
+ * @param {number} quarters - The number of quarters to divide the value into.
+ *
+ * @throws {Error} - If the value is not between 0 and 1.
+ *
+ * @returns {string} - The fraction as a string in the format "x/y".
  */
 function getFraction(value, quarters) {
-  // Ensure the value is between 0 and 1
-  if (value < 0 || value > 1) {
-    throw new Error("Value should be between 0 and 1");
-  }
-
-  // Calculate the size of each quarter
-  const quarterSize = 1 / quarters;
-
-  let quartersIndex = -1;
-
-  // Determine the quarter index
-  for (let i = 1; i <= quarters; i++) {
-    if (value <= i * quarterSize) {
-      quartersIndex = i;
-      break;
+    // Ensure the value is between 0 and 1
+    if (value < 0 || value > 1) {
+        throw new Error("Value should be between 0 and 1");
     }
-  }
-  //console.log(value);
-  return `${quartersIndex}/${quarters}`;
+    const quarterSize = 1 / quarters;
+    let quartersIndex = -1;
+    for (let i = 1; i <= quarters; i++) {
+        if (value <= i * quarterSize) {
+            quartersIndex = i;
+            break;
+        }
+    }
+    return `${quartersIndex}/${quarters}`;
 }
 
 /**
- * Function to calculate the angle of a perpendicular line to the given line segment.
- * The angle is calculated in degrees, with 0 degrees pointing to the right.
+ * Calculates the angle of a perpendicular line to the given line segment.
+ *
  * @param {number} x1 - The x-coordinate of the start point of the line segment.
  * @param {number} y1 - The y-coordinate of the start point of the line segment.
  * @param {number} x2 - The x-coordinate of the end point of the line segment.
  * @param {number} y2 - The y-coordinate of the end point of the line segment.
- * @returns {number} - The angle of the perpendicular line in degrees.
+ *
+ * @returns {number} - The angle of the perpendicular line in degrees, with 0 degrees pointing to the right.
  */
 function calculatePerpendicularAngle(x1, y1, x2, y2) {
-  return (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI + 90;
+    return (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI + 90;
 }
 
 /**
- * Function to update the minions (dividers and text) of a line.
- * @param {Object} line - The line for which the minions are being updated.
- * @returns {number} - The length of the line after updating the minions.
+ * Updates the minions (dividers and text) associated with a line.
+ *
+ * @param {fabric.Line} line - The line object to update the minions for.
+ *
+ * @returns {number} - The length of the line in pixels, adjusted for the calibration point.
  */
 function updateMinions(line) {
-  // Check if the line has minions
-  if (!line.minions) return;
+    // Check if the line has minions associated with it
+    if (!line.minions) return;
 
-  // Calculate the transformed coordinates of the start and end points of the line
-  const points = line.calcLinePoints();
-  const startPoint = new fabric.Point(points.x1, points.y1);
-  const endPoint = new fabric.Point(points.x2, points.y2);
-  const transformMatrix = line.calcTransformMatrix();
-  const startTransformed = fabric.util.transformPoint(
-    startPoint,
-    transformMatrix
-  );
-  const endTransformed = fabric.util.transformPoint(endPoint, transformMatrix);
+    // Calculate the transformed coordinates of the line's start and end points
+    const points = line.calcLinePoints();
+    const startPoint = new fabric.Point(points.x1, points.y1);
+    const endPoint = new fabric.Point(points.x2, points.y2);
+    const transformMatrix = line.calcTransformMatrix();
+    const startTransformed = fabric.util.transformPoint(
+        startPoint,
+        transformMatrix
+    );
+    const endTransformed = fabric.util.transformPoint(endPoint, transformMatrix);
 
-  // Calculate the angle of the perpendicular line to the line segment
-  const angle = calculatePerpendicularAngle(
-    startTransformed.x,
-    startTransformed.y,
-    endTransformed.x,
-    endTransformed.y
-  );
+    // Calculate the angle of the perpendicular line to the line segment
+    const angle = calculatePerpendicularAngle(
+        startTransformed.x,
+        startTransformed.y,
+        endTransformed.x,
+        endTransformed.y
+    );
 
-  // Update the position and angle of the start divider
-  line.minions[0]
-    .set({ left: startTransformed.x, top: startTransformed.y, angle: angle })
-    .setCoords();
+    // Update the position and angle of the start divider
+    line.minions[0]
+        .set({ left: startTransformed.x, top: startTransformed.y, angle: angle })
+        .setCoords();
 
-  // Update the position and angle of the end divider
-  line.minions[1]
-    .set({ left: endTransformed.x, top: endTransformed.y, angle: angle })
-    .setCoords();
+    // Update the position and angle of the end divider
+    line.minions[1]
+        .set({ left: endTransformed.x, top: endTransformed.y, angle: angle })
+        .setCoords();
 
-  // Calculate the length of the line
-  const length =
-    Math.sqrt(
-      Math.pow(endTransformed.x - startTransformed.x, 2) +
-        Math.pow(endTransformed.y - startTransformed.y, 2)
-    ) * calibrationPoint;
+    // Calculate the length of the line in pixels, adjusted for the calibration point
+    const length =
+        Math.sqrt(
+            Math.pow(endTransformed.x - startTransformed.x, 2) +
+            Math.pow(endTransformed.y - startTransformed.y, 2)
+        ) * calibrationPoint;
 
-  // Update the text representing the length of the line
-  line.minions[2]
-    .set({
-      text: `${convertPixelLength(
-        length,
-        realLineValueUnit === "" ? "px" : realLineValueUnit
-      )}`,
-      left: (startTransformed.x + endTransformed.x) / 2,
-      top: (startTransformed.y + endTransformed.y) / 2,
-    })
-    .setCoords();
+    // Update the text of the line length
+    line.minions[2]
+        .set({
+            text: `${convertPixelLength(
+                length,
+                realLineValueUnit === "" ? "px" : realLineValueUnit
+            )}`,
+            left: (startTransformed.x + endTransformed.x) / 2,
+            top: (startTransformed.y + endTransformed.y) / 2,
+        })
+        .setCoords();
 
-  // Return the length of the line
-  return length;
+    // Return the length of the line in pixels, adjusted for the calibration point
+    return length;
 }
 
 /**
- * Function to set the relationship between a line and its minions (dividers and text).
- * The relationship is stored as a transform matrix that can be used to position the minions relative to the line.
- * @param {Object} line - The line for which the relationship is being set.
- * @returns {void}
+ * Sets the relationship between a line and its minions (dividers and text) by calculating and storing the desired transform matrix.
+ *
+ * @param {fabric.Line} line - The line object to set the relationship for.
+ *
+ * @returns {undefined}
  */
 function setRelationship(line) {
-  // Calculate the transform matrix of the line
-  const bossTransform = line.calcTransformMatrix();
+    // Calculate the transform matrix of the line
+    const bossTransform = line.calcTransformMatrix();
 
-  // Invert the transform matrix of the line
-  const invertedBossTransform = fabric.util.invertTransform(bossTransform);
+    // Invert the transform matrix of the line
+    const invertedBossTransform = fabric.util.invertTransform(bossTransform);
 
-  // Iterate over the minions (dividers and text) of the line
-  line.minions.forEach((o) => {
-    // Calculate the desired transform matrix by multiplying the inverted transform matrix of the line
-    // with the transform matrix of the minion
-    const desiredTransform = fabric.util.multiplyTransformMatrices(
-      invertedBossTransform,
-      o.calcTransformMatrix()
-    );
+    // Iterate through the minions (dividers and text) associated with the line
+    line.minions.forEach((o) => {
+        // Calculate the desired transform matrix by multiplying the inverted transform matrix of the line with the transform matrix of the minion
+        const desiredTransform = fabric.util.multiplyTransformMatrices(
+            invertedBossTransform,
+            o.calcTransformMatrix()
+        );
 
-    // Store the desired transform matrix as a relationship property of the minion
-    o.relationship = desiredTransform;
-  });
+        // Store the desired transform matrix as a property of the minion
+        o.relationship = desiredTransform;
+    });
 }
 
 document.getElementById("realLengthUnitSelect").addEventListener("change", () => {
-  // Get the real line length value input element
-  const realLineLengthValue = document.getElementById("realLineLengthValue");
-
-  // Destructure the value property from the event target (the select element)
-  const { value } = event.target;
-
-  // Update the real line length value based on the selected unit
-  realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
+    /**
+     * Updates the value of the real line length input field based on the selected unit.
+     *
+     * @returns {undefined}
+     */
+    const realLineLengthValue = document.getElementById("realLineLengthValue");
+    const { value } = event.target;
+    realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
 });
-;
-let magnifierEnabled = false; // Track if the magnifier is enabled
-
-document.getElementById("magnifier-btn").addEventListener("click", () => {
-  const magnifierBtn = document.getElementById("magnifier-btn");
-  const isMagnifierOn = magnifierBtn.classList.contains("active");
-
-  if (isMagnifierOn) {
-    disableMagnifier();
-    magnifierBtn.classList.remove("active");
-    magnifierBtn.style.backgroundColor = ""
-    magnifierEnabled = false; // Update the magnifier state
-  
-  } else {
-    enableMagnifier();
-    magnifierBtn.classList.add("active");
-    moveMode = true;
-    magnifierBtn.style.backgroundColor = "yellow"
-    magnifierEnabled = true; // Update the magnifier state
-  }
-});
-
-fabricCanvas.on('mouse:down', (event) => {
-  if (!magnifierEnabled) {
-    // Draw new lines only when the magnifier is disabled
-    const pointer = fabricCanvas.getPointer(event.e);
-    const points = [pointer.x, pointer.y, pointer.x + 50, pointer.y + 50]; // Adjust line coordinates as needed
-    const line = new fabric.Line(points, {
-      fill: 'black',
-      stroke: 'black',
-      strokeWidth: 5,
-      selectable: true,
-    });
-    fabricCanvas.add(line);
-  }
-});
-
-function enableMagnifier() {
-  const magnifierSize = 100; // New size of the magnifier square
-  const zoomLevel = 2; // Magnification level
-  const borderRadius = 5; // Border radius for the magnifier
-
-  // Add event listener to the canvas to track mouse movements and zoom
-  fabricCanvas.on('mouse:move', updateMagnifiedView);
-  fabricCanvas.on('mouse:wheel', updateMagnifiedView);
-
-  function updateMagnifiedView(event) {
-    const pointer = fabricCanvas.getPointer(event.e);
-    
-    // Check if a line is selected
-    const selectedLine = fabricCanvas.getActiveObject();
-    if (selectedLine && selectedLine.type === 'line') {
-      const selectedControl = selectedLine.__corner;
-      if (selectedControl) {
-        // Calculate the magnifier size based on the zoom level
-        const magnifierSize = 100 / fabricCanvas.getZoom(); // Adjust this value as needed
-        
-        // Create or update the magnifier rectangle
-        if (!fabricCanvas.magnifier) {
-          fabricCanvas.magnifier = new fabric.Rect({
-            left: pointer.x - magnifierSize / 2,
-            top: pointer.y - magnifierSize / 2,
-            width: magnifierSize,
-            height: magnifierSize,
-            fill: 'white',
-            stroke: 'black',
-            strokeWidth: 1,
-            selectable: false,
-            evented: false,
-            rx: borderRadius, // Set the horizontal border radius
-            ry: borderRadius, // Set the vertical border radius
-          });
-          fabricCanvas.add(fabricCanvas.magnifier);
-        } else {
-          fabricCanvas.magnifier.set({
-            left: pointer.x - magnifierSize / 2,   // + 20
-            top: pointer.y - magnifierSize / 2,   //  + 20
-            width: magnifierSize,
-            height: magnifierSize,
-          });
-        }
-    
-        // Capture the portion of the canvas under the magnifier
-        const magnifiedCanvas = document.createElement('canvas');
-        magnifiedCanvas.width = magnifierSize;
-        magnifiedCanvas.height = magnifierSize;
-        const magnifiedContext = magnifiedCanvas.getContext('2d');
-        magnifiedContext.drawImage(
-          fabricCanvas.lowerCanvasEl,
-          pointer.x - magnifierSize / 2,
-          pointer.y - magnifierSize / 2,
-          magnifierSize,
-          magnifierSize,
-          0,
-          0,
-          magnifierSize * zoomLevel,
-          magnifierSize * zoomLevel
-        );
-    
-        // Set the magnifier's fill with the magnified content
-        fabricCanvas.magnifier.set({
-          fill: new fabric.Pattern({
-            source: magnifiedCanvas,
-            repeat: 'no-repeat',
-          }),
-        });
-    
-        fabricCanvas.renderAll();
-      }
-    }
-  }
-  
-  
-}
-
-function disableMagnifier() {
-  // Remove the magnifier rectangle from the canvas
-  if (fabricCanvas.magnifier) {
-    fabricCanvas.remove(fabricCanvas.magnifier);
-    fabricCanvas.magnifier = null;
-  }
-
-  // Remove the event listener for mouse movements
-  //fabricCanvas.off('mouse:move');
-}
