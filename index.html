@@ -112,15 +112,12 @@
       z-index: 999;
       display: none;
     }
-    #color{
-      
-    }
   </style>
 </head>
 
 <body>
   <nav>
-    <div>
+    <div style="background-color: rgb(55, 200, 200); padding: 10px;">
       <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" />
       <button id="zoom-in" style="margin-left: 20px">+</button>
       <button id="zoom-out">-</button>
@@ -143,10 +140,10 @@
       <!-- <button id="cleanCalibration-value-btn" style="background-color: rgb(239, 242, 245);">Re-Calibration</button> -->
     </div>
 
-    <div>
+    <div style="background-color: rgb(55, 200, 200); padding: 10px;">
       <!-- <button id="Clearviewport">Clear-viewport</button> -->
       <span>
-        <input type="color" id="color">
+        <input type="color" id="color" style="height: 22px; width: 80px;">
       </span>
       <button id="previous">Previous</button>
       <button id="next">Next</button>

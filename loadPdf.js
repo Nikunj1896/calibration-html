@@ -122,7 +122,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             updateButtonStates();
 
             pdf.getPage(pageNumber).then(function (page) {
-                const viewport = page.getViewport(4.0);
+                const viewport = page.getViewport(3.0);
                 canvasEl.height = viewport.height;
                 canvasEl.width = viewport.width;
 
@@ -317,17 +317,17 @@ const init = () => {
     function updateMagnifier(o) {
         if (!isMegnifier) return
 
-        console.log("o", o)
+        console.log("o", o);
         const evt = o.e;
-        console.log("evt", evt)
+        console.log("evt", evt);
         const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
 
         // Calculate zoomed area
-        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
-        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom + 30;
+        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom + 30;
         const sw = width / (mLevel * zoom);
         const sh = height / (mLevel * zoom);
 
@@ -559,7 +559,7 @@ const init = () => {
         console.log("zoom factor :", zoom);
         type === "in" && (zoom += zoomFactor);
         type === "out" && (zoom -= zoomFactor);
-        zoom = Math.min(Math.max(zoom, 0.5), 8);
+        zoom = Math.min(Math.max(zoom, 1), 8);
         fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
         // fabricCanvas.setZoom(zoom);
         fabricCanvas.renderAll();
@@ -1039,7 +1039,7 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
             const feet = Math.floor(totalInches / 12);
             const inches = totalInches % 12;
             const preciosion = inches - Math.floor(inches);
-            const quarter = precisionvalue.split("/")[1];
+            const quarter = precisionvalue.split("/")[1];    // 2,4,8,16,32
             const fraction = getFraction(preciosion, quarter);
             fraction === ` ${quarter} / ${quarter}`;
             const ans = preciosion <= 0.1 ? " " : fraction;
@@ -1197,11 +1197,17 @@ function setRelationship(line) {
 
 document.getElementById("realLengthUnitSelect").addEventListener("change", () => {
     /**
+     * Event handler for the real line length unit select element.
      * Updates the value of the real line length input field based on the selected unit.
      *
      * @returns {undefined}
      */
     const realLineLengthValue = document.getElementById("realLineLengthValue");
     const { value } = event.target;
-    realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
+
+    if (value === "ftin") {
+        realLineLengthValue.value = "00'-00\"";
+    } else {
+        realLineLengthValue.value = "00.00";
+    }
 });
