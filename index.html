@@ -105,8 +105,8 @@
     }
 
     #zoomed {
-      border-radius: 50px;
-      border: 1px solid rgb(6 32 73);
+      border-radius: 100px;
+      border: 5px solid rgb(6 32 73);
       position: absolute;
       pointer-events: none;
       z-index: 999;
@@ -118,10 +118,10 @@
 <body>
   <nav>
     <div style="background-color: rgb(55, 200, 200); padding: 10px;">
-      <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" />
-      <button id="zoom-in" style="margin-left: 20px">+</button>
+      <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" style="color: transparent;" />
+      <button id="zoom-in" >+</button>
       <button id="zoom-out">-</button>
-      <button id="calibration-btn" style="margin-left: 100px">
+      <button id="calibration-btn" style="margin-left: 50px">
         Calibrate
       </button>
       <button id="toggle-draw">Measure</button>
@@ -161,9 +161,9 @@
         " id="file-value"></h5>
   </nav>
 
-  <canvas id="pdfcanvas"></canvas>
-  <div id="background-layer"></div>
-  <canvas id="zoomed" width="200" height="200"></canvas>
+  <canvas id="pdfcanvas"></canvas>  <!--------------------- for PDF ---->
+  <div id="background-layer"></div> 
+  <canvas id="zoomed" width="180" height="180"></canvas>  <!-------------- Zoom Canvas / Magnifier ---->
 
   <div id="message">
     <div id="content">

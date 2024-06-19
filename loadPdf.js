@@ -61,17 +61,7 @@ function (e) {
 }
 );
 
-document.querySelector("#megnifier").addEventListener("click", /**
- * Toggles the magnifier functionality.
- * 
- * @param {Event} event - The event that triggered this function.
- * @returns {void}
- */
-    /**
- * Toggles the magnifier mode on and off.
- * @returns {void}
- */
-function () {
+document.querySelector("#megnifier").addEventListener("click", function () {
     isMegnifier = !isMegnifier;
     console.log('ismegnifier', isMegnifier);
 
@@ -84,14 +74,10 @@ function () {
     }
 });
 
-document.querySelector("#color").addEventListener("change", /**
- * Event listener for changing the line color.
- * Updates the line color and logs the selected color to the console.
- * @param {Event} e - The event object that triggered this function.
- */
-function (e) {
+
+document.querySelector("#color").addEventListener("change", function (e) {
     lineColor = e.target.value;
-    console.log("lineColor: " + lineColor);
+    console.log(lineColor + `  is the Cuurent Line Color `);
 })
 
 const drawCross = (context, width, height) => {
@@ -142,37 +128,13 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
     fileReader.readAsArrayBuffer(pdfFile);
 };
 
-previous.addEventListener("click", /**
- * Function to handle the previous page button click event.
- * Decrements the currentPage variable and re-renders the PDF on the canvas.
- *
- * @returns {void}
- */
-    /**
- * Function to handle the previous page button click event.
- * Decrements the currentPage variable and re-renders the PDF on the canvas.
- *
- * @returns {void}
- */
-function () {
+previous.addEventListener("click", function () {
     currentPage = currentPage - 1; // Decrement the currentPage
     initFabricCanvas(); // Initialize the fabric canvas
     renderPdfToCanvas(currentPdfFile, currentPage); // Render the PDF on the canvas
 });
 
-next.addEventListener("click", /**
- * Function to handle the next page button click event.
- * Increases the currentPage variable by 1 and re-renders the PDF on the canvas.
- *
- * @returns {void}
- */
-    /**
- * Function to handle the next page button click event.
- * Increases the currentPage value by 1 and re-renders the PDF on the canvas.
- *
- * @returns {void}
- */
-function () {
+next.addEventListener("click", function () {
     currentPage = currentPage + 1;
     initFabricCanvas();
     renderPdfToCanvas(currentPdfFile, currentPage);
@@ -302,7 +264,7 @@ const init = () => {
 
     fabricCanvas.on('mouse:out', () => {
         if (isMegnifier) {
-            console.log('mouseLeave ------------------------------');
+            console.log('mouseLeave --->>>');
             zoomCanvas.style.display = 'none';
         }
     });
@@ -315,40 +277,88 @@ const init = () => {
     });
 
     function updateMagnifier(o) {
-        if (!isMegnifier) return
-
-        console.log("o", o);
+        if (!isMegnifier) return;
+    
         const evt = o.e;
-        console.log("evt", evt);
-        const mLevel = 2; // Magnification level
+        const mLevel = 5; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
-
-        // Calculate zoomed area
-        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom + 30;
-        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom + 30;
-        const sw = width / (mLevel * zoom);
-        const sh = height / (mLevel * zoom);
-
-        // Update the position of zoomCanvas based on the cursor position
-        zoomCanvas.style.left = `${evt.clientX}px`;
+        const zoom = fabricCanvas.getZoom();
+        
+    
+        // Calculate zoomed area centered on the pointer
+        const sx = (pointer.x * zoom) ; // - (width / (2 * mLevel)) / zoom
+        const sy = (pointer.y * zoom) ;  //  - (height / (2 * mLevel)) / zoom
+        const sw = width / (mLevel * zoom) + 57;     // ---------------------------------------->
+        const sh = height / (mLevel * zoom) + 57;
+    
+        zoomCanvas.style.backgroundColor = 'yellow' ;; // for checking the cuurent page size of the pdf------------------- <
+        
+        zoomCanvas.style.display = 'absolute';
+        zoomCanvas.style.left = `${evt.clientX }px` ; // Offset for better visibility
         zoomCanvas.style.top = `${evt.clientY}px`;
-
+        
+    
         try {
             zoomctx.clearRect(0, 0, width, height);
             zoomctx.imageSmoothingEnabled = true;
-            zoomctx.drawImage(
+            zoomctx.drawImage(          // 9 value ust be requrire for draw dynamic image on canvas
                 fabricCanvas.lowerCanvasEl,
-                sx + left, sy + top, sw, sh, // Source rectangle
-                0, 0, width, height // Destination rectangle
+                sx + left,
+                sy + top,
+                sw,
+                sh, // Source rectangle
+                0, 0, width, height 
             );
-            drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+            //drawCrossAndGrid(zoomctx, width, height); // Draw crosshair and grid\
+            // console.log(sx);      |
+            // console.log(sy);      ____ ---> zoom canvas
         } catch (error) {
             console.log("Error drawing zoom:", error);
         }
     }
+    
+    function drawCrossAndGrid(ctx, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const size = 30;
+    
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 1;
+    
+        // Horizontal line
+        ctx.beginPath();
+        ctx.moveTo(centerX - size, centerY);
+        ctx.lineTo(centerX + size, centerY);
+        ctx.stroke();
+    
+        // Vertical line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - size);
+        ctx.lineTo(centerX, centerY + size);
+        ctx.stroke();
+    
+        // Draw 10px x 10px grid
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Light grey color for grid
+        ctx.lineWidth = 1.1;
+    
+        for (let x = 0; x < width; x += 15) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+    
+        for (let y = 0; y < height; y += 15) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+    }
 
+    
     fabricCanvas.on("mouse:up", function (o) {
         if (isAnyLineSelected) return;
         isDragging = false;
@@ -396,17 +406,17 @@ const init = () => {
 
     fabricCanvas.on("object:moving", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o)
+        updateMagnifier(o) // magnifier calling
     });
 
     fabricCanvas.on("object:rotating", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o)
+        updateMagnifier(o) // magnifier calling
     });
 
     fabricCanvas.on("object:scaling", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o)
+        updateMagnifier(o) // magnifier calling
     });
 
     function handleLineObjectSelection(selectedLine) {
@@ -418,7 +428,6 @@ const init = () => {
                 //* Horizontal line
                 selectedLine.setControlsVisibility({
                     ml: true, //middle-left
-                    //bottom-left
                     br: false, //bottom-right
                     mt: false, //middle-top
                     mb: false, //middle-bottom
@@ -426,7 +435,7 @@ const init = () => {
                     mr: true, //middle-right
                     tl: false, //top-left
                     tr: false, //top-right
-                    bl: false,
+                    bl: false, //bottom-left
                 });
             } else {
                 //* Vertical line
@@ -556,10 +565,10 @@ const init = () => {
         event.preventDefault();
         let zoomFactor = 0.2;
         zoom = fabricCanvas.getZoom();
-        console.log("zoom factor :", zoom);
+        console.log("zoom factor :", zoom);   // -------------------------------------------->
         type === "in" && (zoom += zoomFactor);
         type === "out" && (zoom -= zoomFactor);
-        zoom = Math.min(Math.max(zoom, 1), 8);
+        zoom = Math.min(Math.max(zoom, 0.5), 10);
         fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
         // fabricCanvas.setZoom(zoom);
         fabricCanvas.renderAll();
