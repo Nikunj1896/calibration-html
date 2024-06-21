@@ -23,12 +23,6 @@ let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
 let zoom = 1;
-let lineColor = "black";
-
-let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
-let isCalibrationPointAAdded = false;
-let isCalibrationPointBAdded = false;
-let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
 
 fabric.Object.prototype.padding = 10;
 fabric.Object.prototype.transparentCorners = false;
@@ -43,12 +37,6 @@ document.querySelector("#pdf-upload").addEventListener(
  *
  * @param {Event} e - The event object containing the file upload details.
  */
-    /**
- * Event listener for file input.
- * Validates the selected file to ensure it's a PDF.
- * If valid, sets the current PDF file and renders the first page to the canvas.
- * @param {Event} e - The event object containing the file input details.
- */
 function (e) {
     const file = e.target.files[0];
     if (file.type !== "application/pdf") {
@@ -61,7 +49,13 @@ function (e) {
 }
 );
 
-document.querySelector("#megnifier").addEventListener("click", function () {
+document.querySelector("#megnifier").addEventListener("click", /**
+ * Toggles the magnifier functionality.
+ * 
+ * @param {Event} event - The event that triggered this function.
+ * @returns {void}
+ */
+function () {
     isMegnifier = !isMegnifier;
     console.log('ismegnifier', isMegnifier);
 
@@ -74,29 +68,35 @@ document.querySelector("#megnifier").addEventListener("click", function () {
     }
 });
 
-
-document.querySelector("#color").addEventListener("change", function (e) {
-    lineColor = e.target.value;
-    console.log(lineColor + `  is the Cuurent Line Color `);
-})
+// const drawCross = (context, width, height) => {
+//     context.strokeStyle = 'aqua';
+//     context.lineWidth = 1;
+//     context.beginPath();
+//     context.moveTo(width / 2, 0);
+//     context.lineTo(width / 2, height);
+//     context.moveTo(0, height / 2);
+//     context.lineTo(width, height / 2);
+//     context.stroke();
+// };
 
 const drawCross = (context, width, height) => {
-    context.strokeStyle = 'aqua';
-    context.lineWidth = 1;
-
-    // Set the line dash pattern for a dashed line
-    context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
-
-    context.beginPath();
-    context.moveTo(width / 2, 0);
-    context.lineTo(width / 2, height);
-    context.moveTo(0, height / 2);
-    context.lineTo(width, height / 2);
-    context.stroke();
-
-    // Reset the line dash to default (solid line) if needed
-    context.setLineDash([]);
+  context.strokeStyle = 'aqua';
+  context.lineWidth = 1;
+  
+  // Set the line dash pattern for a dashed line
+  context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
+  
+  context.beginPath();
+  context.moveTo(width / 2, 0);
+  context.lineTo(width / 2, height);
+  context.moveTo(0, height / 2);
+  context.lineTo(width, height / 2);
+  context.stroke();
+  
+  // Reset the line dash to default (solid line) if needed
+  context.setLineDash([]);
 };
+
 
 const renderPdfToCanvas = (pdfFile, pageNumber) => {
     const fileReader = new FileReader();
@@ -108,7 +108,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             updateButtonStates();
 
             pdf.getPage(pageNumber).then(function (page) {
-                const viewport = page.getViewport(3.0);
+                const viewport = page.getViewport(2.0);
                 canvasEl.height = viewport.height;
                 canvasEl.width = viewport.width;
 
@@ -128,17 +128,43 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
     fileReader.readAsArrayBuffer(pdfFile);
 };
 
-previous.addEventListener("click", function () {
-    currentPage = currentPage - 1; // Decrement the currentPage
-    initFabricCanvas(); // Initialize the fabric canvas
-    renderPdfToCanvas(currentPdfFile, currentPage); // Render the PDF on the canvas
+previous.addEventListener("click", /**
+ * Function to handle the previous page button click event.
+ * Decrements the currentPage variable and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+function () {
+    currentPage = currentPage - 1;
+    initFabricCanvas();
+    renderPdfToCanvas(currentPdfFile, currentPage);
 });
 
-next.addEventListener("click", function () {
+next.addEventListener("click", /**
+ * Function to handle the next page button click event.
+ * Increases the currentPage variable by 1 and re-renders the PDF on the canvas.
+ *
+ * @returns {void}
+ */
+function () {
     currentPage = currentPage + 1;
     initFabricCanvas();
     renderPdfToCanvas(currentPdfFile, currentPage);
 });
+
+// reset.addEventListener('click', function (){
+//   // initFabricCanvas();
+//   fabricCanvas.dispose();
+//   renderPdfToCanvas(currentPdfFile , currentPage);
+// })
+
+// ctrl + r to rerender the page
+// document.addEventListener('keydown', function (event) {
+//   if (event.ctrlKey && event.key === 'r') {
+//     event.preventDefault(); // Prevent the default browser reload behavior
+//     renderPdfToCanvas(currentPdfFile, currentPage);
+//   }
+// });
 
 const updateButtonStates = () => {
     previous.disabled = currentPage <= 1;
@@ -162,6 +188,11 @@ const init = () => {
     let moveMode = true; // Flag to indicate whether the canvas is in move mode
 
     let line, startDivider, endDivider, lineLengthText, points;
+
+    let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
+    let isCalibrationPointAAdded = false;
+    let isCalibrationPointBAdded = false;
+    let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
 
     let realLineValue = 0;
 
@@ -262,103 +293,41 @@ const init = () => {
         updateMagnifier(o)
     });
 
-    fabricCanvas.on('mouse:out', () => {
-        if (isMegnifier) {
-            console.log('mouseLeave --->>>');
-            zoomCanvas.style.display = 'none';
-        }
-    });
-
-    fabricCanvas.on('mouse:over', () => {
-        if (isMegnifier) {
-            console.log('Mouse entered the canvas');
-            zoomCanvas.style.display = 'block';
-        }
-    });
-
     function updateMagnifier(o) {
-        if (!isMegnifier) return;
-    
+        if (!isMegnifier) return
+
+        console.log("o",o)
         const evt = o.e;
-        const mLevel = 5; // Magnification level
+        console.log("evt",evt)
+        const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
-        const zoom = fabricCanvas.getZoom();
-        
-    
-        // Calculate zoomed area centered on the pointer
-        const sx = (pointer.x * zoom) ; // - (width / (2 * mLevel)) / zoom
-        const sy = (pointer.y * zoom) ;  //  - (height / (2 * mLevel)) / zoom
-        const sw = width / (mLevel * zoom) + 57;     // ---------------------------------------->
-        const sh = height / (mLevel * zoom) + 57;
-    
-        zoomCanvas.style.backgroundColor = 'yellow' ;; // for checking the cuurent page size of the pdf------------------- <
-        
-        zoomCanvas.style.display = 'absolute';
-        zoomCanvas.style.left = `${evt.clientX }px` ; // Offset for better visibility
+
+        // Calculate zoomed area
+        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
+        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        const sw = width / (mLevel * zoom);
+        const sh = height / (mLevel * zoom);
+
+        // Update the position of zoomCanvas based on the cursor position
+        zoomCanvas.style.left = `${evt.clientX}px`;
         zoomCanvas.style.top = `${evt.clientY}px`;
-        
-    
+
         try {
             zoomctx.clearRect(0, 0, width, height);
             zoomctx.imageSmoothingEnabled = true;
-            zoomctx.drawImage(          // 9 value ust be requrire for draw dynamic image on canvas
+            zoomctx.drawImage(
                 fabricCanvas.lowerCanvasEl,
-                sx + left,
-                sy + top,
-                sw,
-                sh, // Source rectangle
-                0, 0, width, height 
+                sx + left, sy + top, sw, sh, // Source rectangle
+                0, 0, width, height // Destination rectangle
             );
-            //drawCrossAndGrid(zoomctx, width, height); // Draw crosshair and grid\
-            // console.log(sx);      |
-            // console.log(sy);      ____ ---> zoom canvas
+            drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
         } catch (error) {
             console.log("Error drawing zoom:", error);
         }
     }
-    
-    function drawCrossAndGrid(ctx, width, height) {
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const size = 30;
-    
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 1;
-    
-        // Horizontal line
-        ctx.beginPath();
-        ctx.moveTo(centerX - size, centerY);
-        ctx.lineTo(centerX + size, centerY);
-        ctx.stroke();
-    
-        // Vertical line
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - size);
-        ctx.lineTo(centerX, centerY + size);
-        ctx.stroke();
-    
-        // Draw 10px x 10px grid
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Light grey color for grid
-        ctx.lineWidth = 1.1;
-    
-        for (let x = 0; x < width; x += 15) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-        }
-    
-        for (let y = 0; y < height; y += 15) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-    }
 
-    
     fabricCanvas.on("mouse:up", function (o) {
         if (isAnyLineSelected) return;
         isDragging = false;
@@ -406,17 +375,17 @@ const init = () => {
 
     fabricCanvas.on("object:moving", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o) // magnifier calling
+        updateMagnifier(o)
     });
 
     fabricCanvas.on("object:rotating", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o) // magnifier calling
+        updateMagnifier(o)
     });
 
     fabricCanvas.on("object:scaling", function (o) {
         updateMinions(o.target);
-        updateMagnifier(o) // magnifier calling
+        updateMagnifier(o)
     });
 
     function handleLineObjectSelection(selectedLine) {
@@ -428,6 +397,7 @@ const init = () => {
                 //* Horizontal line
                 selectedLine.setControlsVisibility({
                     ml: true, //middle-left
+                    //bottom-left
                     br: false, //bottom-right
                     mt: false, //middle-top
                     mb: false, //middle-bottom
@@ -435,7 +405,7 @@ const init = () => {
                     mr: true, //middle-right
                     tl: false, //top-left
                     tr: false, //top-right
-                    bl: false, //bottom-left
+                    bl: false,
                 });
             } else {
                 //* Vertical line
@@ -565,10 +535,10 @@ const init = () => {
         event.preventDefault();
         let zoomFactor = 0.2;
         zoom = fabricCanvas.getZoom();
-        console.log("zoom factor :", zoom);   // -------------------------------------------->
+        console.log("zoom factor :", zoom);
         type === "in" && (zoom += zoomFactor);
         type === "out" && (zoom -= zoomFactor);
-        zoom = Math.min(Math.max(zoom, 0.5), 10);
+        zoom = Math.min(Math.max(zoom, 0.5), 8);
         fabricCanvas.zoomToPoint({ x: event.offsetX, y: event.offsetY }, zoom);
         // fabricCanvas.setZoom(zoom);
         fabricCanvas.renderAll();
@@ -810,8 +780,8 @@ function updateLineLengthText(line, text) {
 const addLine = ({ points, isInitialShowText }) => {
     let newLine = new fabric.Line(points, {
         strokeWidth: 0.3,
-        fill: calibrationMode ? "black" : lineColor,
-        stroke: calibrationMode ? "black" : lineColor,
+        fill: "black",
+        stroke: "black",
         originX: "center",
         originY: "center",
         selectable: false,
@@ -938,22 +908,11 @@ function removeLine(line) {
  *
  * @returns {fabric.Rect} - The divider object.
  */
-/**
- * Creates a divider object for the line.
- *
- * @param {number} left - The x-coordinate of the divider.
- * @param {number} top - The y-coordinate of the divider.
- * @param {fabric.Line} line - The line object to associate with the divider.
- *
- * @returns {fabric.Rect} - The divider object.
- */
 function makeDivider(left, top, line) {
     const divider = new fabric.Rect({
-        strokeWidth: 0.1,
-        stroke: calibrationMode ? "black" : lineColor,
         left: left,
         top: top,
-        width: 10,
+        width: 15,
         height: 0.5,
         fill: "#666",
         originX: "center",
@@ -966,13 +925,6 @@ function makeDivider(left, top, line) {
     return divider;
 }
 
-/**
- * Creates a text object for the line length on the canvas.
- *
- * @param {fabric.Line} line - The line object to associate with the text.
- *
- * @returns {fabric.Text} - The text object for the line length.
- */
 /**
  * Creates a text object for the line length on the canvas.
  *
@@ -1000,13 +952,6 @@ function makeLineLengthText(line) {
     return text;
 }
 
-/**
- * Calculates the length of a line in pixels, taking into account the calibration point.
- *
- * @param {fabric.Line} line - The line object for which to calculate the length.
- *
- * @returns {number} - The length of the line in pixels, adjusted for the calibration point.
- */
 /**
  * Calculates the length of a line in pixels, taking into account the calibration point.
  *
@@ -1048,7 +993,7 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
             const feet = Math.floor(totalInches / 12);
             const inches = totalInches % 12;
             const preciosion = inches - Math.floor(inches);
-            const quarter = precisionvalue.split("/")[1];    // 2,4,8,16,32
+            const quarter = precisionvalue.split("/")[1];
             const fraction = getFraction(preciosion, quarter);
             fraction === ` ${quarter} / ${quarter}`;
             const ans = preciosion <= 0.1 ? " " : fraction;
@@ -1073,7 +1018,6 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
         return result.toFixed(2);
     }
 }
-
 /**
  * Calculates the fraction of a value based on the number of quarters.
  *
@@ -1206,17 +1150,11 @@ function setRelationship(line) {
 
 document.getElementById("realLengthUnitSelect").addEventListener("change", () => {
     /**
-     * Event handler for the real line length unit select element.
      * Updates the value of the real line length input field based on the selected unit.
      *
      * @returns {undefined}
      */
     const realLineLengthValue = document.getElementById("realLineLengthValue");
     const { value } = event.target;
-
-    if (value === "ftin") {
-        realLineLengthValue.value = "00'-00\"";
-    } else {
-        realLineLengthValue.value = "00.00";
-    }
+    realLineLengthValue.value = value === "ftin" ? "00'-00\"" : "00.00";
 });
