@@ -106,7 +106,7 @@
 
     #zoomed {
       border-radius: 50px;
-      border: 1px solid rgb(6 32 73);
+      border: 10px solid rgba(159, 167, 167, 0.443);
       position: absolute;
       pointer-events: none;
       z-index: 999;
@@ -118,9 +118,9 @@
 <body>
   <nav>
     <div style="background-color: rgb(46, 180, 180); padding: 10px;">
-      <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" />
-      <button id="zoom-in" style="margin-left: 20px">+</button>
-      <button id="zoom-out">-</button>
+      <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" style="color: transparent;" />
+      <button id="zoom-in" >➕</button>
+      <button id="zoom-out">➖</button>
       <button id="calibration-btn" style="margin-left: 100px">
         Calibrate
       </button>

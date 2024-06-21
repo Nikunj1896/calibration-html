@@ -22,7 +22,7 @@ let realLineValueUnit = "";
 let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
-let zoom = 1;
+let zoom = 1.2;
 let lineColor = "black";
 
 let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
@@ -107,7 +107,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             updateButtonStates();
 
             pdf.getPage(pageNumber).then(function (page) {
-                const viewport = page.getViewport(3.0);
+                const viewport = page.getViewport(2.0);
                 canvasEl.height = viewport.height;
                 canvasEl.width = viewport.width;
 
@@ -289,11 +289,18 @@ const init = () => {
 
     function updateMagnifier(o) {
         if (!isMegnifier) return
+        //fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';  // Chanage the cursor pointer 
 
-        console.log("o", o)
+        if(isMegnifier){
+            fabricCanvas.defaultCursor = 'crosshair';
+        }else{
+            fabricCanvas.defaultCursor = 'default';
+        }
+
+        // console.log("o", o)
         const evt = o.e;
-        console.log("evt", evt)
-        const mLevel = 2; // Magnification level
+        // console.log("evt", evt)
+        const mLevel = 3; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
@@ -301,8 +308,8 @@ const init = () => {
         // Calculate zoomed area
         const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
         const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
-        const sw = width / (mLevel * zoom);
-        const sh = height / (mLevel * zoom);
+        const sw = width / (mLevel * zoom) + 57;
+        const sh = height / (mLevel * zoom) + 57;
 
         // Update the position of zoomCanvas based on the cursor position
         zoomCanvas.style.left = `${evt.clientX}px`;
@@ -316,7 +323,7 @@ const init = () => {
                 sx + left, sy + top, sw, sh, // Source rectangle
                 0, 0, width, height // Destination rectangle
             );
-            drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+            //drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
         } catch (error) {
             console.log("Error drawing zoom:", error);
         }
