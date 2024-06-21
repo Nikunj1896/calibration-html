@@ -107,7 +107,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             updateButtonStates();
 
             pdf.getPage(pageNumber).then(function (page) {
-                const viewport = page.getViewport(4.0);
+                const viewport = page.getViewport(3.0);
                 canvasEl.height = viewport.height;
                 canvasEl.width = viewport.width;
 
