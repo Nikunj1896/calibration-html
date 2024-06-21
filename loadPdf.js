@@ -23,6 +23,12 @@ let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
 let zoom = 1;
+let lineColor = "black";
+
+let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
+let isCalibrationPointAAdded = false;
+let isCalibrationPointBAdded = false;
+let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
 
 fabric.Object.prototype.padding = 10;
 fabric.Object.prototype.transparentCorners = false;
@@ -37,16 +43,16 @@ document.querySelector("#pdf-upload").addEventListener(
  *
  * @param {Event} e - The event object containing the file upload details.
  */
-function (e) {
-    const file = e.target.files[0];
-    if (file.type !== "application/pdf") {
-        console.error(file.name, "is not a pdf file.");
-        return;
+    function (e) {
+        const file = e.target.files[0];
+        if (file.type !== "application/pdf") {
+            console.error(file.name, "is not a pdf file.");
+            return;
+        }
+        currentPdfFile = file;
+        currentPage = 1;
+        renderPdfToCanvas(file, currentPage);
     }
-    currentPdfFile = file;
-    currentPage = 1;
-    renderPdfToCanvas(file, currentPage);
-}
 );
 
 document.querySelector("#megnifier").addEventListener("click", /**
@@ -55,48 +61,41 @@ document.querySelector("#megnifier").addEventListener("click", /**
  * @param {Event} event - The event that triggered this function.
  * @returns {void}
  */
-function () {
-    isMegnifier = !isMegnifier;
-    console.log('ismegnifier', isMegnifier);
+    function () {
+        isMegnifier = !isMegnifier;
+        console.log('ismegnifier', isMegnifier);
 
-    if (isMegnifier) {
-        this.style.backgroundColor = 'red';
-        zoomCanvas.style.display = 'block';
-    } else {
-        this.style.backgroundColor = '#EFEFEF';
-        zoomCanvas.style.display = 'none';
-    }
-});
+        if (isMegnifier) {
+            this.style.backgroundColor = 'red';
+            zoomCanvas.style.display = 'block';
+        } else {
+            this.style.backgroundColor = '#EFEFEF';
+            zoomCanvas.style.display = 'none';
+        }
+    });
 
-// const drawCross = (context, width, height) => {
-//     context.strokeStyle = 'aqua';
-//     context.lineWidth = 1;
-//     context.beginPath();
-//     context.moveTo(width / 2, 0);
-//     context.lineTo(width / 2, height);
-//     context.moveTo(0, height / 2);
-//     context.lineTo(width, height / 2);
-//     context.stroke();
-// };
+document.querySelector("#color").addEventListener("change", function (e) {
+    lineColor = e.target.value
+    console.log("lineColor: " + lineColor)
+})
 
 const drawCross = (context, width, height) => {
-  context.strokeStyle = 'aqua';
-  context.lineWidth = 1;
-  
-  // Set the line dash pattern for a dashed line
-  context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
-  
-  context.beginPath();
-  context.moveTo(width / 2, 0);
-  context.lineTo(width / 2, height);
-  context.moveTo(0, height / 2);
-  context.lineTo(width, height / 2);
-  context.stroke();
-  
-  // Reset the line dash to default (solid line) if needed
-  context.setLineDash([]);
-};
+    context.strokeStyle = 'aqua';
+    context.lineWidth = 1;
 
+    // Set the line dash pattern for a dashed line
+    context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
+
+    context.beginPath();
+    context.moveTo(width / 2, 0);
+    context.lineTo(width / 2, height);
+    context.moveTo(0, height / 2);
+    context.lineTo(width, height / 2);
+    context.stroke();
+
+    // Reset the line dash to default (solid line) if needed
+    context.setLineDash([]);
+};
 
 const renderPdfToCanvas = (pdfFile, pageNumber) => {
     const fileReader = new FileReader();
@@ -108,7 +107,7 @@ const renderPdfToCanvas = (pdfFile, pageNumber) => {
             updateButtonStates();
 
             pdf.getPage(pageNumber).then(function (page) {
-                const viewport = page.getViewport(2.0);
+                const viewport = page.getViewport(4.0);
                 canvasEl.height = viewport.height;
                 canvasEl.width = viewport.width;
 
@@ -134,11 +133,11 @@ previous.addEventListener("click", /**
  *
  * @returns {void}
  */
-function () {
-    currentPage = currentPage - 1;
-    initFabricCanvas();
-    renderPdfToCanvas(currentPdfFile, currentPage);
-});
+    function () {
+        currentPage = currentPage - 1;
+        initFabricCanvas();
+        renderPdfToCanvas(currentPdfFile, currentPage);
+    });
 
 next.addEventListener("click", /**
  * Function to handle the next page button click event.
@@ -146,25 +145,11 @@ next.addEventListener("click", /**
  *
  * @returns {void}
  */
-function () {
-    currentPage = currentPage + 1;
-    initFabricCanvas();
-    renderPdfToCanvas(currentPdfFile, currentPage);
-});
-
-// reset.addEventListener('click', function (){
-//   // initFabricCanvas();
-//   fabricCanvas.dispose();
-//   renderPdfToCanvas(currentPdfFile , currentPage);
-// })
-
-// ctrl + r to rerender the page
-// document.addEventListener('keydown', function (event) {
-//   if (event.ctrlKey && event.key === 'r') {
-//     event.preventDefault(); // Prevent the default browser reload behavior
-//     renderPdfToCanvas(currentPdfFile, currentPage);
-//   }
-// });
+    function () {
+        currentPage = currentPage + 1;
+        initFabricCanvas();
+        renderPdfToCanvas(currentPdfFile, currentPage);
+    });
 
 const updateButtonStates = () => {
     previous.disabled = currentPage <= 1;
@@ -188,11 +173,6 @@ const init = () => {
     let moveMode = true; // Flag to indicate whether the canvas is in move mode
 
     let line, startDivider, endDivider, lineLengthText, points;
-
-    let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
-    let isCalibrationPointAAdded = false;
-    let isCalibrationPointBAdded = false;
-    let isCalibrationLineDrawn = false; // Flag to indicate whether the calibration line  has drawn or not
 
     let realLineValue = 0;
 
@@ -293,12 +273,26 @@ const init = () => {
         updateMagnifier(o)
     });
 
+    fabricCanvas.on('mouse:out', () => {
+        if (isMegnifier) {
+            console.log('mouseLeave ------------------------------');
+            zoomCanvas.style.display = 'none';
+        }
+    });
+
+    fabricCanvas.on('mouse:over', () => {
+        if (isMegnifier) {
+            console.log('Mouse entered the canvas');
+            zoomCanvas.style.display = 'block';
+        }
+    });
+
     function updateMagnifier(o) {
         if (!isMegnifier) return
 
-        console.log("o",o)
+        console.log("o", o)
         const evt = o.e;
-        console.log("evt",evt)
+        console.log("evt", evt)
         const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
@@ -780,8 +774,8 @@ function updateLineLengthText(line, text) {
 const addLine = ({ points, isInitialShowText }) => {
     let newLine = new fabric.Line(points, {
         strokeWidth: 0.3,
-        fill: "black",
-        stroke: "black",
+        fill: calibrationMode ? "black" : lineColor,
+        stroke: calibrationMode ? "black" : lineColor,
         originX: "center",
         originY: "center",
         selectable: false,
@@ -910,9 +904,11 @@ function removeLine(line) {
  */
 function makeDivider(left, top, line) {
     const divider = new fabric.Rect({
+        strokeWidth: 0.1,
+        stroke: calibrationMode ? "black" : lineColor,
         left: left,
         top: top,
-        width: 15,
+        width: 10,
         height: 0.5,
         fill: "#666",
         originX: "center",
@@ -1018,6 +1014,7 @@ function convertPixelLength(pixelValue, realLineValueUnit) {
         return result.toFixed(2);
     }
 }
+
 /**
  * Calculates the fraction of a value based on the number of quarters.
  *

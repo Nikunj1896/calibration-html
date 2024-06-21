@@ -105,12 +105,10 @@
     }
 
     #zoomed {
-      border-radius: 100px;
+      border-radius: 50px;
       border: 1px solid rgb(6 32 73);
       position: absolute;
       pointer-events: none;
-      top: 0;
-      left: 0;
       z-index: 999;
       display: none;
     }
@@ -121,7 +119,7 @@
   <nav>
     <div>
       <input id="pdf-upload" type="file" accept=".pdf" onchange="displayFileName()" />
-      <button id="zoom-in" style="margin-left: 50px">+</button>
+      <button id="zoom-in" style="margin-left: 20px">+</button>
       <button id="zoom-out">-</button>
       <button id="calibration-btn" style="margin-left: 100px">
         Calibrate
@@ -143,6 +141,9 @@
 
     <div>
       <!-- <button id="Clearviewport">Clear-viewport</button> -->
+      <span>
+        <input type="color" id="color" style="width: 80px; height: 20px;">
+      </span>
       <button id="previous">Previous</button>
       <button id="next">Next</button>
     </div>
