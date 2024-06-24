@@ -289,12 +289,17 @@ const init = () => {
 
     function updateMagnifier(o) {
         if (!isMegnifier) return
-        //fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';  // Chanage the cursor pointer 
+        //fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default'; 
 
         if(isMegnifier){
             fabricCanvas.defaultCursor = 'crosshair';
-        }else{
+        }else if(!isMegnifier){
             fabricCanvas.defaultCursor = 'default';
+        }
+
+        if (!o || !o.e) {
+            console.log("Invalid input object or event");
+            return;
         }
 
         // console.log("o", o)
@@ -303,29 +308,89 @@ const init = () => {
         const mLevel = 3; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         const { width, height } = zoomCanvas;
-        const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
+        const [left, top] = fabricCanvas.viewportTransform.slice(4, 6) || [0,0];
+
 
         // Calculate zoomed area
         const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
         const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
-        const sw = width / (mLevel * zoom) + 57;
-        const sh = height / (mLevel * zoom) + 57;
+        const sw = width / (mLevel * zoom - zoom) -  10;
+        const sh = height / (mLevel * zoom - zoom) - 10;
+
+        // console.log(sw);
 
         // Update the position of zoomCanvas based on the cursor position
         zoomCanvas.style.left = `${evt.clientX}px`;
         zoomCanvas.style.top = `${evt.clientY}px`;
 
+        console.log(
+            "sx" , sx , 
+            "sy" , sy , 
+            "sw" , sw , 
+            "sh" , sh , 
+            "top" , top ,   // not found  // log value = 0
+            "left" , left ,  // not found  // log value = 0
+            "width " , width , 
+            "height" , height
+        ) ;
+
         try {
             zoomctx.clearRect(0, 0, width, height);
             zoomctx.imageSmoothingEnabled = true;
             zoomctx.drawImage(
-                fabricCanvas.lowerCanvasEl,
-                sx + left, sy + top, sw, sh, // Source rectangle
-                0, 0, width, height // Destination rectangle
+                fabricCanvas.lowerCanvasEl,        // Specifies the image, canvas, or video element to use
+                (sx + left) * 1.028,              // Optional. The x coordinate where to start clipping
+                (sy + top) * 1.018,              // Optional. The y coordinate where to start clipping
+                sw,                             // Optional. The width of the clipped image
+                sh,                            // Optional. The height of the clipped image
+                0,                            // The x coordinate where to place the image on the canvas
+                0,                           // The y coordinate where to place the image on the canvas
+                width + 20,                 // Optional. The width of the image to use (stretch or reduce the image)
+                height + 20                // Optional. The height of the image to use (stretch or reduce the image)
             );
-            //drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+            drawCrossAndGrid(zoomctx, width, height); // Draw crosshair or any other overlay
+            console.log("------------->" , top , left);
         } catch (error) {
             console.log("Error drawing zoom:", error);
+        }
+    }
+
+    function drawCrossAndGrid(ctx, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const size = 30;
+    
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 1.1;
+    
+        // Horizontal line
+        ctx.beginPath();
+        ctx.moveTo(centerX - size, centerY);
+        ctx.lineTo(centerX + size, centerY);
+        ctx.stroke();
+    
+        // Vertical line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - size);
+        ctx.lineTo(centerX, centerY + size);
+        ctx.stroke();
+    
+        // Draw 10px x 10px grid
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Light grey color for grid
+        ctx.lineWidth = 1.1;
+    
+        for (let x = 0; x < width; x += 20) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+    
+        for (let y = 0; y < height; y += 20) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
         }
     }
 
@@ -398,7 +463,6 @@ const init = () => {
                 //* Horizontal line
                 selectedLine.setControlsVisibility({
                     ml: true, //middle-left
-                    //bottom-left
                     br: false, //bottom-right
                     mt: false, //middle-top
                     mb: false, //middle-bottom
@@ -406,7 +470,7 @@ const init = () => {
                     mr: true, //middle-right
                     tl: false, //top-left
                     tr: false, //top-right
-                    bl: false,
+                    bl: false, //bottom-left
                 });
             } else {
                 //* Vertical line
