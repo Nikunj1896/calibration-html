@@ -22,7 +22,7 @@ let realLineValueUnit = "";
 let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
-let zoom = 1.2;
+let zoom = 1.2 ;
 let lineColor = "black";
 
 let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
@@ -165,6 +165,7 @@ const initFabricCanvas = () => {
 
 const init = () => {
     let groupLength = 0;
+    // let groupLength = 1.2;
     let isDrawing = false; // Flag to indicate whether a line is currently being drawn
     let drawMode = false; // Flag to indicate whether the canvas is in draw mode
     let isMoving = false; // Flag to indicate whether the user is drawing the line
@@ -280,12 +281,15 @@ const init = () => {
         }
     });
 
+
     fabricCanvas.on('mouse:over', () => {
         if (isMegnifier) {
             console.log('Mouse entered the canvas');
             zoomCanvas.style.display = 'block';
         }
     });
+
+    
 
     function updateMagnifier(o) {
         if (!isMegnifier) return
@@ -304,57 +308,79 @@ const init = () => {
 
         // console.log("o", o)
         const evt = o.e;
-        // console.log("evt", evt)
-        const mLevel = 3; // Magnification level
+        console.log("evt", evt)
+        const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
+        // console.log('pointer :>> ', pointer);
+        // console.log('zoom :>> ', zoom);
         const { width, height } = zoomCanvas;
-        const [left, top] = fabricCanvas.viewportTransform.slice(4, 6) || [0,0];
+        const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
 
+        // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
+
+        // const pointX = (pointer.x * zoom) + (width / (4 * mLevel))
+        // const pointY = (pointer.y * zoom) + (height / (4 * mLevel))
 
         // Calculate zoomed area
-        const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
-        const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
-        const sw = width / (mLevel * zoom - zoom) -  10;
-        const sh = height / (mLevel * zoom - zoom) - 10;
 
-        // console.log(sw);
+        const sw = width / (mLevel * zoom);
+        const sh = height / (mLevel * zoom);
+        const sx = (pointer.x * (zoom * 1.018)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+        const sy = (pointer.y * (zoom * 1.018)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+
+        // const sx = (pointer.x * zoom) - ((width * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
+        // const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
+        // console.log('sx :>> ', sx);
+        // const sy = (pointer.y * zoom) - ((height * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
+        // const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        
+        console.log('sy :>> ', sy);
+        console.log('sx ;>>' , sx);
+
+        console.log('left :>> ', left);
+        console.log('top :>> ', top);
 
         // Update the position of zoomCanvas based on the cursor position
-        zoomCanvas.style.left = `${evt.clientX}px`;
-        zoomCanvas.style.top = `${evt.clientY}px`;
-
-        console.log(
-            "sx" , sx , 
-            "sy" , sy , 
-            "sw" , sw , 
-            "sh" , sh , 
-            "top" , top ,   // not found  // log value = 0
-            "left" , left ,  // not found  // log value = 0
-            "width " , width , 
-            "height" , height
-        ) ;
+        zoomCanvas.style.left = `${evt.clientX + 10}px`;
+        zoomCanvas.style.top = `${evt.clientY + 10}px`;
 
         try {
             zoomctx.clearRect(0, 0, width, height);
+            // console.log('zoomctx :>> ', zoomctx);
             zoomctx.imageSmoothingEnabled = true;
             zoomctx.drawImage(
-                fabricCanvas.lowerCanvasEl,        // Specifies the image, canvas, or video element to use
-                (sx + left) * 1.028,              // Optional. The x coordinate where to start clipping
-                (sy + top) * 1.018,              // Optional. The y coordinate where to start clipping
-                sw,                             // Optional. The width of the clipped image
-                sh,                            // Optional. The height of the clipped image
-                0,                            // The x coordinate where to place the image on the canvas
-                0,                           // The y coordinate where to place the image on the canvas
-                width + 20,                 // Optional. The width of the image to use (stretch or reduce the image)
-                height + 20                // Optional. The height of the image to use (stretch or reduce the image)
+                fabricCanvas.lowerCanvasEl,
+                sx + (left + (left / ((zoom * mLevel) * 2))),
+                sy + (top + (top / ((zoom * mLevel) * 2))),
+                sw,
+                sh, // Source rectangle
+                0,
+                0,
+                width,
+                height // Destination rectangle
             );
             drawCrossAndGrid(zoomctx, width, height); // Draw crosshair or any other overlay
-            console.log("------------->" , top , left);
+
+            // Draw the cursor on the zoom canvas
+            // const cursorSize = 10; // Size of the cursor
+            // const cursorX = width / 2;
+            // const cursorY = height / 2;
+    
+            // zoomctx.beginPath();
+            // zoomctx.moveTo(cursorX - cursorSize , cursorY);
+            // zoomctx.lineTo(cursorX + cursorSize , cursorY);
+            // zoomctx.moveTo(cursorX, cursorY - cursorSize);
+            // zoomctx.lineTo(cursorX, cursorY + cursorSize);
+            // zoomctx.strokeStyle = 'red'; // Color of the cursor
+            // zoomctx.lineWidth = 1;
+            // zoomctx.stroke();
+            // zoomctx.closePath();
+
         } catch (error) {
             console.log("Error drawing zoom:", error);
         }
     }
-
+    
     function drawCrossAndGrid(ctx, width, height) {
         const centerX = width / 2;
         const centerY = height / 2;
