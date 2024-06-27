@@ -81,11 +81,26 @@ document.querySelector("#color").addEventListener("change", function (e) {
 })
 
 const drawCross = (context, width, height) => {
-    context.strokeStyle = 'aqua';
-    context.lineWidth = 1;
+
+    // const cursorSize = 10; // Size of the cursor
+    // const cursorX = width / 2;
+    // const cursorY = height / 2;
+
+    // zoomctx.beginPath();
+    // zoomctx.moveTo(cursorX - cursorSize, cursorY);
+    // zoomctx.lineTo(cursorX + cursorSize, cursorY);
+    // zoomctx.moveTo(cursorX, cursorY - cursorSize);
+    // zoomctx.lineTo(cursorX, cursorY + cursorSize);
+    // zoomctx.strokeStyle = 'red'; // Color of the cursor
+    // zoomctx.lineWidth = 1;
+    // zoomctx.stroke();
+    // zoomctx.closePath();
+
+    context.strokeStyle = 'red';
+    context.lineWidth = 2;
 
     // Set the line dash pattern for a dashed line
-    context.setLineDash([5, 3]); // 5 pixels drawn, 3 pixels blank
+    context.setLineDash([5, 0]); // 5 pixels drawn, 3 pixels blank
 
     context.beginPath();
     context.moveTo(width / 2, 0);
@@ -166,7 +181,6 @@ const initFabricCanvas = () => {
 
 const init = () => {
     let groupLength = 0;
-    // let groupLength = 1.2;
     let isDrawing = false; // Flag to indicate whether a line is currently being drawn
     let drawMode = false; // Flag to indicate whether the canvas is in draw mode
     let isMoving = false; // Flag to indicate whether the user is drawing the line
@@ -177,6 +191,7 @@ const init = () => {
     let line, startDivider, endDivider, lineLengthText, points;
 
     let realLineValue = 0;
+    let LineLengthUpdated = 0;
 
     const bg = canvasEl.toDataURL("image/png");
     fabricCanvas = new fabric.Canvas("pdfcanvas");
@@ -208,6 +223,8 @@ const init = () => {
             backgroundLayer.style.display = "none";
             if (!isCalibrationPointAAdded) {
                 isMoving = true;
+                console.log("1st point");
+                message.style.display = "none";
                 const { newLine, firstDivider, lastDivider, lineLength } = addLine({
                     points,
                     isInitialShowText: false,
@@ -224,6 +241,7 @@ const init = () => {
                     pointer,
                     points: [line.x1, line.y1, line.x2, line.y2],
                 });
+                // console.log('line :>> ', line);
                 completeLine({ line });
                 fabricCanvas.renderAll();
             }
@@ -241,6 +259,7 @@ const init = () => {
             startDivider = firstDivider;
             endDivider = lastDivider;
             lineLengthText = lineLength;
+            console.log('startDivider :>> ', line, startDivider, endDivider, lineLengthText);
             fabricCanvas.add(line, startDivider, endDivider, lineLengthText);
         } else {
             if (moveMode) {
@@ -255,10 +274,12 @@ const init = () => {
         if (calibrationMode) return;
 
         const evt = o.e;
+
         // * Draw Line
         if (drawMode && isDrawing) {
             isMoving = true;
             const pointer = fabricCanvas.getPointer(evt);
+            // console.log('pointer :>> ', line, lineLengthText, pointer, points);
             moveLine({ line, lineLengthText, pointer, points });
             fabricCanvas.renderAll();
         }
@@ -289,26 +310,328 @@ const init = () => {
         }
     });
 
-    
+    function lerp(a, b, n) {
+        return (1 - n) * a + n * b;
+    }
+
+    // function updateMagnifier(o) {
+    //     if (!isMegnifier) return;
+
+    //     fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';
+
+    //     if (!o || !o.e) {
+    //         console.log("Invalid input object or event");
+    //         return;
+    //     }
+
+    //     const evt = o.e;
+    //     const mLevel = 2; // Magnification level
+    //     const pointer = fabricCanvas.getPointer(evt);
+
+    //     // console.log('pointer :>> ', pointer);
+    //     // console.log('zoom :>> ', zoom);
+    //     const { width, height } = zoomCanvas;
+
+    //     const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
+
+    //     // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
+
+    //     // const pointX = (pointer.x * zoom) + (width / (4 * mLevel))
+    //     // const pointY = (pointer.y * zoom) + (height / (4 * mLevel))
+
+    //     // Calculate zoomed area
+
+    //     const sw = width / (mLevel * zoom);
+    //     const sh = height / (mLevel * zoom);
+
+    //     // Zooming Logic sx and sy
+    //     const sx = pointer.x - (sw / 2);
+    //     const sy = pointer.y - (sh / 2);
+
+    //     console.log('sy :>> ', sy);
+    //     console.log('sx :>>', sx);
+
+    //     console.log('left :>> ', left);
+    //     console.log('top :>> ', top);
+
+    //     // Update the position of zoomCanvas based on the cursor position
+    //     zoomCanvas.style.left = `${evt.clientX + 10}px`;
+    //     zoomCanvas.style.top = `${evt.clientY + 20}px`;
+
+    //     try {
+    //         zoomctx.clearRect(0, 0, width, height);
+    //         zoomctx.imageSmoothingEnabled = true;
+    //         zoomctx.drawImage(
+    //             fabricCanvas.lowerCanvasEl,
+    //             sx + left,
+    //             sy + top,
+    //             sw,
+    //             sh, // Source rectangle
+    //             0,
+    //             0,
+    //             width,
+    //             height // Destination rectangle
+    //         );
+
+    //         drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+
+    //         // Calculate the position of the mouse relative to the zoomed-in content
+    //         const zoomFactor = zoom * mLevel;
+    //         const mouseX = width / 2;
+    //         const mouseY = height / 2;
+
+    //         // Draw a blue dot at the calculated position
+    //         zoomctx.beginPath();
+    //         zoomctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
+    //         zoomctx.fillStyle = 'blue';
+    //         zoomctx.fill();
+    //         zoomctx.closePath();
+
+    //     } catch (error) {
+    //         console.log("Error drawing zoom:", error);
+    //     }
+    // }
+
+    // function updateMagnifier(o) {
+    //     if (!isMegnifier) return;
+
+    //     fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';
+
+    //     if (!o || !o.e) {
+    //         console.log("Invalid input object or event");
+    //         return;
+    //     }
+
+    //     const evt = o.e;
+    //     const mLevel = 2; // Magnification level
+    //     const speed = 0.2;
+    //     let glass = { x: 0, y: 0 };
+    //     const pointer = fabricCanvas.getPointer(evt);
+
+    //     // console.log('pointer :>> ', pointer);
+    //     // console.log('zoom :>> ', zoom);
+    //     const { width, height } = zoomCanvas;
+
+    //     const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
+
+    //     // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
+
+    //     // const pointX = (pointer.x * zoom) + (width / (4 * mLevel))
+    //     // const pointY = (pointer.y * zoom) + (height / (4 * mLevel))
+
+    //     // Calculate zoomed area
+
+    //     const sw = width / (mLevel * zoom);
+    //     const sh = height / (mLevel * zoom);
+
+    //     const distPointX = evt.movementX;
+    //     const distPointY = evt.movementY;
+    //     fabricCanvas
+    //     console.log('distPointX :>> ', distPointX);
+    //     console.log('distPointY :>> ', distPointY);
+    //     console.log('fabricCanvas :>> ', fabricCanvas._offset);
+    //     console.log('dx :>> ', evt.movementX);
+    //     console.log('dy :>> ', evt.movementY);
+
+    //     // const sx = (pointer.x * (zoom * 1.035)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+    //     // const sy = (pointer.y * (zoom)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+    //     const sx = (pointer.x * zoom) - (((sw / mLevel) * zoom) - (left / (Math.pow(zoom))));
+    //     const sy = (pointer.y * zoom) - (((sh / mLevel) * zoom) - (top / (Math.pow(zoom))));
+
+    //     let x = evt.clientX - left;
+    //     let y = evt.clientY - top;
+
+    //     // const equationX = (((pointer.x * zoom) - ((width - width * 1.4) * (distPointX)) * zoom) / width) + (left + (left / ((zoom * mLevel) * 2)));
+    //     // const equationY = (((pointer.y * zoom) - ((height - height * 1.4) * (distPointY)) * zoom) / height) + (top + (top / ((zoom * mLevel) * 2)));
+
+    //     const equationX = (pointer.x * zoom) - ((((width - width * 1.4) * (distPointX) * (zoom * zoom)) / width) / zoom)
+    //     const equationY = (pointer.y * zoom) - ((((height - height * 1.4) * (distPointY) * (zoom * zoom)) / height) / zoom)
+
+    //     // console.log('sy :>> ', sy);
+    //     // console.log('sx :>>', sx);
+
+    //     // console.log('left :>> ', left);
+    //     // console.log('top :>> ', top);
+
+    //     // Update the position of zoomCanvas based on the cursor position
+    //     zoomCanvas.style.left = `${evt.clientX + 10}px`;
+    //     zoomCanvas.style.top = `${evt.clientY + 20}px`;
+
+    //     try {
+    //         zoomctx.clearRect(0, 0, width, height);
+    //         zoomctx.imageSmoothingEnabled = true;
+
+    //         zoomctx.drawImage(
+    //             fabricCanvas.lowerCanvasEl,
+    //             -x * (zoom * mLevel) + (width / 2) + (left + (left / ((zoom * mLevel) * 2))),
+    //             -y * (zoom * mLevel) + (height / 2) + (top + (top / ((zoom * mLevel) * 2))),
+    //             // -width * zoom + (width - width * 1.4) * (distPointX) + left,
+    //             // -height * zoom + (height - height * 1.4) * (distPointY) + top,
+    //             width * mLevel,
+    //             height * mLevel, // Source rectangle
+    //             0,
+    //             0,
+    //             width,
+    //             height // Destination rectangle
+    //         );
+
+    //         // zoomctx.drawImage(
+    //         //     fabricCanvas.lowerCanvasEl,
+    //         //     sx + (left + (left / ((zoom * mLevel) * 2))),
+    //         //     sy + (top + (top / ((zoom * mLevel) * 2))),
+    //         //     sw,
+    //         //     sh, // Source rectangle
+    //         //     0,
+    //         //     0,
+    //         //     width,
+    //         //     height // Destination rectangle
+    //         // );
+
+    //         drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+
+    //         // Calculate the position of the mouse relative to the zoomed-in content
+    //         const zoomFactor = zoom * mLevel;
+    //         const mouseX = width / 2;
+    //         const mouseY = height / 2;
+
+    //         // Draw a blue dot at the calculated position
+    //         zoomctx.beginPath();
+    //         zoomctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
+    //         zoomctx.fillStyle = 'blue';
+    //         zoomctx.fill();
+    //         zoomctx.closePath();
+
+    //     } catch (error) {
+    //         console.log("Error drawing zoom:", error);
+    //     }
+    // }
+
+    function drawCrossAndGrid(ctx, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const size = 30;
+
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 1.1;
+
+        // Horizontal line
+        ctx.beginPath();
+        ctx.moveTo(centerX - size, centerY);
+        ctx.lineTo(centerX + size, centerY);
+        ctx.stroke();
+
+        // Vertical line
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - size);
+        ctx.lineTo(centerX, centerY + size);
+        ctx.stroke();
+
+        // Draw 10px x 10px grid
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Light grey color for grid
+        ctx.lineWidth = 1.1;
+
+        for (let x = 0; x < width; x += 20) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+
+        for (let y = 0; y < height; y += 20) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+    }
+
+    // function updateMagnifier(o) {
+    //     if (!isMegnifier) return;
+
+    //     fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';
+
+    //     if (!o || !o.e) {
+    //         console.log("Invalid input object or event");
+    //         return;
+    //     }
+
+    //     const evt = o.e;
+    //     const mLevel = 2; // Magnification level
+    //     const pointer = fabricCanvas.getPointer(evt);
+
+    //     // console.log('pointer :>> ', pointer);
+    //     // console.log('zoom :>> ', zoom);
+    //     const { width, height } = zoomCanvas;
+
+    //     const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
+
+    //     // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
+
+    //     // const pointX = (pointer.x * zoom) + (width / (4 * mLevel))
+    //     // const pointY = (pointer.y * zoom) + (height / (4 * mLevel))
+
+    //     // Calculate zoomed area
+
+    //     const sw = width / (mLevel * zoom);
+    //     const sh = height / (mLevel * zoom);
+    //     const sx = (pointer.x * (zoom * 1.035)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+    //     const sy = (pointer.y * (zoom )) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+
+    //     console.log('sy :>> ', sy);
+    //     console.log('sx :>>', sx);
+
+    //     console.log('left :>> ', left);
+    //     console.log('top :>> ', top);
+
+    //     // Update the position of zoomCanvas based on the cursor position
+    //     zoomCanvas.style.left = `${evt.clientX  + 10}px`;
+    //     zoomCanvas.style.top = `${evt.clientY + 20}px`;
+
+    //     try {
+    //         zoomctx.clearRect(0, 0, width, height);
+    //         zoomctx.imageSmoothingEnabled = true;
+    //         zoomctx.drawImage(
+    //             fabricCanvas.lowerCanvasEl,
+    //             sx + (left + (left / ((zoom * mLevel) * 2))),
+    //             sy + (top + (top / ((zoom * mLevel) * 2))),
+    //             sw,
+    //             sh, // Source rectangle
+    //             0,
+    //             0,
+    //             width,
+    //             height // Destination rectangle
+    //         );
+
+    //         drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
+
+    //         // Calculate the position of the mouse relative to the zoomed-in content
+    //         const zoomFactor = zoom * mLevel;
+    //         const mouseX = width / 2;
+    //         const mouseY = height / 2;
+
+    //         // Draw a blue dot at the calculated position
+    //         zoomctx.beginPath();
+    //         zoomctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
+    //         zoomctx.fillStyle = 'blue';
+    //         zoomctx.fill();
+    //         zoomctx.closePath();
+
+    //     } catch (error) {
+    //         console.log("Error drawing zoom:", error);
+    //     }
+    // }
 
     function updateMagnifier(o) {
-        if (!isMegnifier) return;
-    
-        fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';
-    
-        if (!o || !o.e) {
-            console.log("Invalid input object or event");
-            return;
-        }
-    
+        if (!isMegnifier) return
+
+        // console.log("o", o)
         const evt = o.e;
+        console.log("evt", evt)
         const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
-
         // console.log('pointer :>> ', pointer);
         // console.log('zoom :>> ', zoom);
         const { width, height } = zoomCanvas;
-
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
 
         // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
@@ -318,53 +641,53 @@ const init = () => {
 
         // Calculate zoomed area
 
-        const intox = 1.038
-        const intoy = 1
-        const sw = width / (mLevel * zoom);
-        const sh = height / (mLevel * zoom);
-        const ver = 1.038
-        // const sx = (pointer.x * (zoom * 1.042)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
-        // const sy = (pointer.y * (zoom * 1.042)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
-        
-        //--------------->
-        const sx = (pointer.x * (zoom * ver)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
-        const sy = (pointer.y * (zoom * 1.028)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+        const sw = width / (mLevel * (zoom * 1.034));
+        const sh = height / (mLevel * (zoom * 1.034));
 
-        // const sx = ((pointer.x * (zoom * 1.042)) - (width / (2 * mLevel)) / zoom); 
-        // const sy = ((pointer.y * (zoom * 1.042)) - (width / (2 * mLevel)) / zoom);
-    
-        console.log(' ============ ');
-        // console.log('pointer.x :>>' , pointer.x);
-        // console.log('pointer.y :>>' , pointer.y);
-        // console.log('zoom :>>' , zoom);
-        // console.log('sw :>>' , sw);
-        // console.log('sh :>>' , sh);
-        console.log('sx :>> ' , sx);
-        console.log('sy :>> ' , sy) ;
-        // console.log('pointe.x :>> ', pointer.x);
-        // console.log('pointer.y :>> ' ,  pointer.y);
+        const sx = (pointer.x * (zoom * 1.034)) - (((sw) / mLevel * zoom) - (left / (((zoom * 1.034) * mLevel) * (mLevel * mLevel)) / 2));
+        const sy = (pointer.y * (zoom * 1.034)) - (((sh) / mLevel * zoom) - (top / (((zoom * 1.034) * mLevel) * (mLevel * mLevel)) / 2));
 
-        // console.log(fabricCanvas);
- 
-        
-        
-        // console.log('sy :>> ', sy);
-        // console.log('sx :>>', sx);
-    
-        // console.log('left :>> ', left);
-        // console.log('top :>> ', top);
-    
+        // const sx = (pointer.x * zoom) - ((width * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
+        // const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
+        // console.log('sx :>> ', sx);
+        // const sy = (pointer.y * zoom) - ((height * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
+        // const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        console.log('pointer.x :>> ', pointer.x);
+        console.log('sy :>> ', sy);
+        console.log('(sy) :>> ', (sy) + (top + (top / ((zoom * mLevel) * 2))) + 10);
+        console.log('(sy1) :>> ', (sy) + ((top + (top * ((zoom * mLevel) * 2)) / ((zoom * 1.034))) / 2) + 10);
+        console.log('pointer.y :>> ', pointer.y);
+        console.log('sx :>> ', sx);
+        console.log('(sx) :>> ', (sx) + (left + (left / ((zoom * mLevel) * 2))) + 10);
+        console.log('(sx1) :>> ', (sx) + ((left + (left * ((zoom * mLevel) * 2)) / ((zoom * 1.034))) / 2) + 10);
+
+        console.log('left :>> ', left);
+        console.log('top :>> ', top);
+
         // Update the position of zoomCanvas based on the cursor position
-        zoomCanvas.style.left = `${evt.clientX  + 10}px`;
-        zoomCanvas.style.top = `${evt.clientY + 20}px`;
-    
+        zoomCanvas.style.left = `${evt.clientX + 10}px`;
+        zoomCanvas.style.top = `${evt.clientY + 10}px`;
+
+        // For Print the image with no changeable zoom effect coordinates
+        // const printedX = (sx) + (left + (left / ((zoom * mLevel) * 2))) + 10;
+        // const printedY = (sy) + (top + (top / ((zoom * mLevel) * 2))) + 10;
+        const printedX = (sx) + (left + (left / ((zoom * mLevel) * 2))) + 10;
+        const printedY = (sy) + (top + (top / ((zoom * mLevel) * 2))) + 10;
+        // zoomCanvas.style.left = `${(sx) + (left + (left / ((zoom * mLevel) * 2))) + 10}px`;
+        // zoomCanvas.style.top = `${(sy) + (top + (top / ((zoom * mLevel) * 2))) + 10}px`;
+        // zoomCanvas.style.left = `${(sx) + ((left + (left * ((zoom* mLevel) * 2)) / ((zoom * 1.034))) / 2) + 10}px`;
+        // zoomCanvas.style.top = `${(sy) + ((top + (top * ((zoom * mLevel) * 2)) / ((zoom * 1.034))) / 2) + 10}px`;
+        // zoomCanvas.style.left = `${(sx) + (left / ((zoom * mLevel * 2))) + 10}px`;
+        // zoomCanvas.style.top = `${(sy) + (top / ((zoom * mLevel * 2))) + 10}px`;
+
         try {
             zoomctx.clearRect(0, 0, width, height);
+            // console.log('zoomctx :>> ', zoomctx);
             zoomctx.imageSmoothingEnabled = true;
             zoomctx.drawImage(
                 fabricCanvas.lowerCanvasEl,
-                sx + (left + (left / ((zoom * mLevel) * 2))),
-                sy + (top + (top / ((zoom * mLevel) * 2))),
+                printedX,
+                printedY,
                 sw,
                 sh, // Source rectangle
                 0,
@@ -372,65 +695,9 @@ const init = () => {
                 width,
                 height // Destination rectangle
             );
-    
-            drawCrossAndGrid(zoomctx, width, height); // Draw crosshair or any other overlay
-    
-            // Calculate the position of the mouse relative to the zoomed-in content
-            // const zoomFactor = zoom * mLevel;
-
-            const mouseX = width / 2;
-            const mouseY = height / 2;
-            
-            // Draw a blue dot at the calculated position
-
-            zoomctx.beginPath();
-            zoomctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
-            zoomctx.fillStyle = 'blue';
-            zoomctx.fill();
-            zoomctx.closePath();
-    
+            drawCross(zoomctx, width, height); // Draw crosshair or any other overlay
         } catch (error) {
             console.log("Error drawing zoom:", error);
-        }
-    }
-    
-    
-    function drawCrossAndGrid(ctx, width, height) {
-        const centerX = width / 2  ;
-        const centerY = height / 2;
-        const size = 30;
-    
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = 1.1;
-    
-        // Horizontal line
-        ctx.beginPath();
-        ctx.moveTo(centerX - size, centerY);
-        ctx.lineTo(centerX + size, centerY);
-        ctx.stroke();
-    
-        // Vertical line
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - size);
-        ctx.lineTo(centerX, centerY + size);
-        ctx.stroke();
-    
-        // Draw 10px x 10px grid
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; // Light grey color for grid
-        ctx.lineWidth = 1.1;
-    
-        for (let x = 0; x < width; x += 20) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-        }
-    
-        for (let y = 0; y < height; y += 20) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
         }
     }
 
@@ -482,16 +749,19 @@ const init = () => {
     fabricCanvas.on("object:moving", function (o) {
         updateMinions(o.target);
         updateMagnifier(o)
+        document.getElementById("pdfLineLengthValue").innerHTML = updateMinions(o.target).toFixed(2) + "px";
     });
 
     fabricCanvas.on("object:rotating", function (o) {
         updateMinions(o.target);
         updateMagnifier(o)
+        document.getElementById("pdfLineLengthValue").innerHTML = updateMinions(o.target).toFixed(2) + "px";
     });
 
     fabricCanvas.on("object:scaling", function (o) {
         updateMinions(o.target);
         updateMagnifier(o)
+        document.getElementById("pdfLineLengthValue").innerHTML = updateMinions(o.target).toFixed(2) + "px";
     });
 
     function handleLineObjectSelection(selectedLine) {
@@ -500,9 +770,13 @@ const init = () => {
         if (selectedLine && selectedLine.type === "line") {
             const { x1, y1, x2, y2 } = selectedLine;
             if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
+                console.log("calibration point is set");
+                // document.getElementById("calibrateInputContainer").style.display = "flex";
+                doneObject();
                 //* Horizontal line
                 selectedLine.setControlsVisibility({
                     ml: true, //middle-left
+                    //bottom-left
                     br: false, //bottom-right
                     mt: false, //middle-top
                     mb: false, //middle-bottom
@@ -510,10 +784,12 @@ const init = () => {
                     mr: true, //middle-right
                     tl: false, //top-left
                     tr: false, //top-right
-                    bl: false, //bottom-left
+                    bl: false,
                 });
             } else {
                 //* Vertical line
+
+                doneObject();
                 selectedLine.setControlsVisibility({
                     tl: false, //top-left
                     tr: false, //top-right
@@ -529,26 +805,26 @@ const init = () => {
 
             // Right and wrong icon at side of calibrate line
             if (isCalibrationLineDrawn && calibrationMode) {
-                fabric.Object.prototype.controls.deleteControl = new fabric.Control({
-                    x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
-                    y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
-                    offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
-                    offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
-                    cursorStyle: "pointer",
-                    mouseUpHandler: deleteObject,
-                    render: renderdeleteIcon,
-                    cornerSize: 24,
-                });
-                fabric.Object.prototype.controls.doneControl = new fabric.Control({
-                    x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
-                    y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
-                    offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : -30,
-                    offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 20,
-                    cursorStyle: "pointer",
-                    mouseUpHandler: doneObject,
-                    render: renderDoneIcon,
-                    cornerSize: 24,
-                });
+                // fabric.Object.prototype.controls.deleteControl = new fabric.Control({
+                //     x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+                //     y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+                //     offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 0,
+                //     offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 16 : 20,
+                //     cursorStyle: "pointer",
+                //     mouseUpHandler: deleteObject,
+                //     render: renderdeleteIcon,
+                //     cornerSize: 24,
+                // });
+                // fabric.Object.prototype.controls.doneControl = new fabric.Control({
+                //     x: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? 0.5 : 0.5, // Horizontal or vertical adjustment
+                //     y: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -0.5 : 0.5,
+                //     offsetY: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : -30,
+                //     offsetX: Math.abs(x1 - x2) > Math.abs(y1 - y2) ? -16 : 20,
+                //     cursorStyle: "pointer",
+                //     mouseUpHandler: doneObject,
+                //     render: renderDoneIcon,
+                //     cornerSize: 24,
+                // });
             } else {
                 if (selectedLine.controls.deleteControl)
                     delete selectedLine.controls.deleteControl;
@@ -564,7 +840,7 @@ const init = () => {
             removeLine(line);
 
             message.style.display = "none";
-            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.display = "none";
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
         }
@@ -581,7 +857,9 @@ const init = () => {
     }
 
     function doneObject() {
-        document.getElementById("popup").style.display = "flex";
+        if (!drawMode) {
+            document.getElementById("calibrateInputContainer").style.display = "flex";
+        }
         message.style.display = "none";
         const lengthText = updateMinions(line);
         document.getElementById("pdfLineLengthValue").innerHTML =
@@ -657,6 +935,8 @@ const init = () => {
         isCalibrationPointBAdded = false;
     }
 
+    
+
     //* ---------> manage zoom on mouse and keyboard start ---------->
 
     // * Button event for draw line
@@ -682,7 +962,7 @@ const init = () => {
             (event.ctrlKey && event.code === "NumpadSubtract")
         ) {
             handleZoom(event, "out");
-        } else if (event.key === "Delete") {
+        } else if (event.key === "Delete" || event.key === "Backspace") {
             // Delete the selected object (line)
             const activeObject = fabricCanvas.getActiveObject();
             if (activeObject && activeObject.type === "line") {
@@ -766,7 +1046,13 @@ const init = () => {
                 setTimeout(() => {
                     const backgroundLayer = document.querySelector("#background-layer");
                     backgroundLayer.style.display = "none";
-                }, 3000);
+                    
+                    document.querySelector("#alert").style.display = "block";
+                }, 2400);
+
+                setTimeout(() => {
+                    document.querySelector("#alert").style.display = "none";
+                }, 4000);
 
                 fabricCanvas.forEachObject(function (obj) {
                     obj.selectable = !drawMode;
@@ -790,6 +1076,7 @@ const init = () => {
                 match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
 
                 match4 = /^(\d+)"$/.exec(realLineValue)  // 80"
+                match5 = /^(\d+)''$/.exec(realLineValue); // 80''
                 
                 if (match) {
                     feet = parseInt(match[1], 10);
@@ -811,6 +1098,10 @@ const init = () => {
                     feet = parseInt(match4[1],10);
                     inches = 0;
                     realLineValue = feet + "-" + inches;  
+                } else if(match5) {
+                    feet = parseInt(match5[1] , 10)
+                    inches = 0;
+                    realLineValue = feet + "-" + inches;
                 }else {
                     alert("Value must be in the format 00'-00\" or 00'00\" ");
                     return;
@@ -827,7 +1118,7 @@ const init = () => {
 
             countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
 
-            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.display = "none";
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
 
@@ -842,7 +1133,7 @@ const init = () => {
         .addEventListener("click", function () {
             resetCalibrationState();
 
-            document.getElementById("popup").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.display = "none";
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
             removeLine(line);
@@ -873,6 +1164,11 @@ const displayFileName = () => {
     document.getElementById("file-value").innerHTML = fileName;
     document.getElementById("file-value").style.display = "block";
 };
+
+
+function foucs(){
+    realLineLengthValue.value = "";
+}
 
 /**
  * Updates the text of the line length on the canvas.
@@ -1192,6 +1488,7 @@ function updateMinions(line) {
     if (!line.minions) return;
 
     // Calculate the transformed coordinates of the line's start and end points
+    // console.log("get the start and end point");
     const points = line.calcLinePoints();
     const startPoint = new fabric.Point(points.x1, points.y1);
     const endPoint = new fabric.Point(points.x2, points.y2);
