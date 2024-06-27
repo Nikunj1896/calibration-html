@@ -22,8 +22,9 @@ let realLineValueUnit = "";
 let calibrationPoint = 1;
 let fabricCanvas;
 let isMegnifier = false;
-let zoom = 1.2 ;
+let zoom = 1.2;
 let lineColor = "black";
+
 
 let calibrationMode = false; // Flag to indicate whether the canvas is in calibration mode
 let isCalibrationPointAAdded = false;
@@ -280,7 +281,6 @@ const init = () => {
             zoomCanvas.style.display = 'none';
         }
     });
-
 
     fabricCanvas.on('mouse:over', () => {
         if (isMegnifier) {
