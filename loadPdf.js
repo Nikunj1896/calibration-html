@@ -292,28 +292,23 @@ const init = () => {
     
 
     function updateMagnifier(o) {
-        if (!isMegnifier) return
-        //fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default'; 
-
-        if(isMegnifier){
-            fabricCanvas.defaultCursor = 'crosshair';
-        }else if(!isMegnifier){
-            fabricCanvas.defaultCursor = 'default';
-        }
-
+        if (!isMegnifier) return;
+    
+        fabricCanvas.defaultCursor = isMegnifier ? 'crosshair' : 'default';
+    
         if (!o || !o.e) {
             console.log("Invalid input object or event");
             return;
         }
-
-        // console.log("o", o)
+    
         const evt = o.e;
-        console.log("evt", evt)
         const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
+
         // console.log('pointer :>> ', pointer);
         // console.log('zoom :>> ', zoom);
         const { width, height } = zoomCanvas;
+
         const [left, top] = fabricCanvas.viewportTransform.slice(4, 6);
 
         // console.log('fabricCanvas.viewportTransform :>> ', fabricCanvas.viewportTransform);
@@ -323,30 +318,48 @@ const init = () => {
 
         // Calculate zoomed area
 
+        const intox = 1.038
+        const intoy = 1
         const sw = width / (mLevel * zoom);
         const sh = height / (mLevel * zoom);
-        const sx = (pointer.x * (zoom * 1.018)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
-        const sy = (pointer.y * (zoom * 1.018)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
-
-        // const sx = (pointer.x * zoom) - ((width * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
-        // const sx = (pointer.x * zoom) - (width / (2 * mLevel)) / zoom;
-        // console.log('sx :>> ', sx);
-        // const sy = (pointer.y * zoom) - ((height * 2) / ((mLevel) / zoom)) / ((zoom * zoom));
-        // const sy = (pointer.y * zoom) - (height / (2 * mLevel)) / zoom;
+        const ver = 1.038
+        // const sx = (pointer.x * (zoom * 1.042)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+        // const sy = (pointer.y * (zoom * 1.042)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
         
-        console.log('sy :>> ', sy);
-        console.log('sx ;>>' , sx);
+        //--------------->
+        const sx = (pointer.x * (zoom * ver)) - (((sw / mLevel) / zoom) - (left / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
+        const sy = (pointer.y * (zoom * 1.028)) - (((sh / mLevel) / zoom) - (top / (((zoom * zoom) * mLevel) * (mLevel * mLevel)) / 2));
 
-        console.log('left :>> ', left);
-        console.log('top :>> ', top);
+        // const sx = ((pointer.x * (zoom * 1.042)) - (width / (2 * mLevel)) / zoom); 
+        // const sy = ((pointer.y * (zoom * 1.042)) - (width / (2 * mLevel)) / zoom);
+    
+        console.log(' ============ ');
+        // console.log('pointer.x :>>' , pointer.x);
+        // console.log('pointer.y :>>' , pointer.y);
+        // console.log('zoom :>>' , zoom);
+        // console.log('sw :>>' , sw);
+        // console.log('sh :>>' , sh);
+        console.log('sx :>> ' , sx);
+        console.log('sy :>> ' , sy) ;
+        // console.log('pointe.x :>> ', pointer.x);
+        // console.log('pointer.y :>> ' ,  pointer.y);
 
+        // console.log(fabricCanvas);
+ 
+        
+        
+        // console.log('sy :>> ', sy);
+        // console.log('sx :>>', sx);
+    
+        // console.log('left :>> ', left);
+        // console.log('top :>> ', top);
+    
         // Update the position of zoomCanvas based on the cursor position
-        zoomCanvas.style.left = `${evt.clientX + 10}px`;
-        zoomCanvas.style.top = `${evt.clientY + 10}px`;
-
+        zoomCanvas.style.left = `${evt.clientX  + 10}px`;
+        zoomCanvas.style.top = `${evt.clientY + 20}px`;
+    
         try {
             zoomctx.clearRect(0, 0, width, height);
-            // console.log('zoomctx :>> ', zoomctx);
             zoomctx.imageSmoothingEnabled = true;
             zoomctx.drawImage(
                 fabricCanvas.lowerCanvasEl,
@@ -359,30 +372,31 @@ const init = () => {
                 width,
                 height // Destination rectangle
             );
-            drawCrossAndGrid(zoomctx, width, height); // Draw crosshair or any other overlay
-
-            // Draw the cursor on the zoom canvas
-            // const cursorSize = 10; // Size of the cursor
-            // const cursorX = width / 2;
-            // const cursorY = height / 2;
     
-            // zoomctx.beginPath();
-            // zoomctx.moveTo(cursorX - cursorSize , cursorY);
-            // zoomctx.lineTo(cursorX + cursorSize , cursorY);
-            // zoomctx.moveTo(cursorX, cursorY - cursorSize);
-            // zoomctx.lineTo(cursorX, cursorY + cursorSize);
-            // zoomctx.strokeStyle = 'red'; // Color of the cursor
-            // zoomctx.lineWidth = 1;
-            // zoomctx.stroke();
-            // zoomctx.closePath();
+            drawCrossAndGrid(zoomctx, width, height); // Draw crosshair or any other overlay
+    
+            // Calculate the position of the mouse relative to the zoomed-in content
+            // const zoomFactor = zoom * mLevel;
 
+            const mouseX = width / 2;
+            const mouseY = height / 2;
+            
+            // Draw a blue dot at the calculated position
+
+            zoomctx.beginPath();
+            zoomctx.arc(mouseX, mouseY, 3, 0, 2 * Math.PI);
+            zoomctx.fillStyle = 'blue';
+            zoomctx.fill();
+            zoomctx.closePath();
+    
         } catch (error) {
             console.log("Error drawing zoom:", error);
         }
     }
     
+    
     function drawCrossAndGrid(ctx, width, height) {
-        const centerX = width / 2;
+        const centerX = width / 2  ;
         const centerY = height / 2;
         const size = 30;
     
@@ -747,6 +761,13 @@ const init = () => {
                 backgroundLayer.style.display = "block";
                 backgroundLayer.style.backgroundColor = "#3f85ef61";
 
+                // viewport button goes already after click on Calibration button 
+
+                setTimeout(() => {
+                    const backgroundLayer = document.querySelector("#background-layer");
+                    backgroundLayer.style.display = "none";
+                }, 3000);
+
                 fabricCanvas.forEachObject(function (obj) {
                     obj.selectable = !drawMode;
                 });
@@ -767,6 +788,9 @@ const init = () => {
                 match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
                 match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
                 match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
+
+                match4 = /^(\d+)"$/.exec(realLineValue)  // 80"
+                
                 if (match) {
                     feet = parseInt(match[1], 10);
                     inches = parseInt(match[2], 10);
@@ -783,7 +807,11 @@ const init = () => {
                     feet = parseInt(match3[1], 10);
                     inches = parseInt(match3[2], 10);
                     realLineValue = feet + "-" + inches;
-                } else {
+                } else if(match4){
+                    feet = parseInt(match4[1],10);
+                    inches = 0;
+                    realLineValue = feet + "-" + inches;  
+                }else {
                     alert("Value must be in the format 00'-00\" or 00'00\" ");
                     return;
                 }
