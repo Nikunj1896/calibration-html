@@ -626,7 +626,7 @@ const init = () => {
 
         // console.log("o", o)
         const evt = o.e;
-        console.log("evt", evt)
+        // console.log("evt", evt)
         const mLevel = 2; // Magnification level
         const pointer = fabricCanvas.getPointer(evt);
         // console.log('pointer :>> ', pointer);
@@ -934,8 +934,6 @@ const init = () => {
         isCalibrationPointAAdded = false;
         isCalibrationPointBAdded = false;
     }
-
-    
 
     //* ---------> manage zoom on mouse and keyboard start ---------->
 

@@ -54,19 +54,23 @@
       border-radius: 10px;
     }*/
 
-      #calibrateInputContainer {
-        display: none;
-        width: 100%;
-        margin-bottom: 2px;
-      }
+    #calibrateInputContainer {
+      width: 100%;
+      margin-bottom: 2px;
+      background: transparent;
+      height: 53px;
+      position: fixed;
+      z-index: 1;
+    }
 
-      .myBox {
-        background-color: rgb(97, 96, 102);
-        display: flex;
-        padding: 10px;
-        justify-content: space-around;
-        width: 100%;
-      }
+    #myBox {
+      background-color: aqua;
+      display: flex;
+      padding: 10px;
+      justify-content: space-around;
+      width: 100%;
+      display: none;
+    }
 
       .backMyBoxItem {
         display: flex;
@@ -82,48 +86,48 @@
         padding: 4px;
       }
 
-      #background-layer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 10;
-        min-height: 100vh !important;
-        min-width: 100vw !important;
-        display: none;
-        margin-top: 75px;
-        pointer-events: none;
-      }
+    #background-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      min-height: 100vh !important;
+      min-width: 100vw !important;
+      display: none;
+      margin-top: 75px;
+      pointer-events: none;
+    }
 
-      #message {
-        display: none;
-        /* padding: 5px; */
-        border-radius: 10px;
-        background-color: rgb(29, 28, 28);
-        color: rgb(189, 194, 197);
-        /* text-align: center; */
-        font-size: 20px;
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        transition: 0.5s;
-      }
+    #message {
+      display: none;
+      /* padding: 5px; */
+      border-radius: 10px;
+      background-color: rgb(29, 28, 28);
+      color: rgb(189, 194, 197);
+      /* text-align: center; */
+      font-size: 20px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      transition: 0.5s;
+    }
 
-      #content {
-        width: 280px;
-        height: 90px;
-        background-color: rgb(29, 28, 28);
-        border-radius: 10px;
-      }
+    #content {
+      width: 280px;
+      height: 90px;
+      background-color: rgb(29, 28, 28);
+      border-radius: 10px;
+    }
 
-      #messagecheck {
-        background-color: rgba(250, 235, 215, 0);
-        cursor: pointer;
-      }
+    #messagecheck {
+      background-color: rgba(250, 235, 215, 0);
+      cursor: pointer;
+    }
 
-      #pre {
-        font-size: 16px;
-      }
+    #pre {
+      font-size: 16px;
+    }
 
       #zoomed {
         border-radius: 50px;
