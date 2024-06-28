@@ -771,7 +771,7 @@ const init = () => {
             const { x1, y1, x2, y2 } = selectedLine;
             if (Math.abs(x1 - x2) > Math.abs(y1 - y2)) {
                 console.log("calibration point is set");
-                // document.getElementById("calibrateInputContainer").style.display = "flex";
+                // document.getElementById("myBox").style.display = "flex";
                 doneObject();
                 //* Horizontal line
                 selectedLine.setControlsVisibility({
@@ -840,7 +840,8 @@ const init = () => {
             removeLine(line);
 
             message.style.display = "none";
-            document.getElementById("calibrateInputContainer").style.display = "none";
+            document.getElementById("myBox").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.visibility = 'hidden';
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
         }
@@ -858,7 +859,8 @@ const init = () => {
 
     function doneObject() {
         if (!drawMode) {
-            document.getElementById("calibrateInputContainer").style.display = "flex";
+            document.getElementById("myBox").style.display = "flex";
+            document.getElementById("calibrateInputContainer").style.visibility = 'visible';
         }
         message.style.display = "none";
         const lengthText = updateMinions(line);
@@ -1044,7 +1046,7 @@ const init = () => {
                 setTimeout(() => {
                     const backgroundLayer = document.querySelector("#background-layer");
                     backgroundLayer.style.display = "none";
-                    
+
                     document.querySelector("#alert").style.display = "block";
                 }, 2400);
 
@@ -1075,7 +1077,7 @@ const init = () => {
 
                 match4 = /^(\d+)"$/.exec(realLineValue)  // 80"
                 match5 = /^(\d+)''$/.exec(realLineValue); // 80''
-                
+
                 if (match) {
                     feet = parseInt(match[1], 10);
                     inches = parseInt(match[2], 10);
@@ -1092,15 +1094,15 @@ const init = () => {
                     feet = parseInt(match3[1], 10);
                     inches = parseInt(match3[2], 10);
                     realLineValue = feet + "-" + inches;
-                } else if(match4){
-                    feet = parseInt(match4[1],10);
-                    inches = 0;
-                    realLineValue = feet + "-" + inches;  
-                } else if(match5) {
-                    feet = parseInt(match5[1] , 10)
+                } else if (match4) {
+                    feet = parseInt(match4[1], 10);
                     inches = 0;
                     realLineValue = feet + "-" + inches;
-                }else {
+                } else if (match5) {
+                    feet = parseInt(match5[1], 10)
+                    inches = 0;
+                    realLineValue = feet + "-" + inches;
+                } else {
                     alert("Value must be in the format 00'-00\" or 00'00\" ");
                     return;
                 }
@@ -1116,7 +1118,8 @@ const init = () => {
 
             countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
 
-            document.getElementById("calibrateInputContainer").style.display = "none";
+            document.getElementById("myBox").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.visibility = 'hidden';
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
 
@@ -1131,7 +1134,8 @@ const init = () => {
         .addEventListener("click", function () {
             resetCalibrationState();
 
-            document.getElementById("calibrateInputContainer").style.display = "none";
+            document.getElementById("myBox").style.display = "none";
+            document.getElementById("calibrateInputContainer").style.visibility = 'hidden';
             document.getElementById("calibration-btn").style.backgroundColor =
                 "#EFEFEF";
             removeLine(line);
@@ -1164,7 +1168,7 @@ const displayFileName = () => {
 };
 
 
-function foucs(){
+function foucs() {
     realLineLengthValue.value = "";
 }
 
