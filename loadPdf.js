@@ -1009,10 +1009,10 @@ const init = () => {
             if (event.ctrlKey) return;
 
             if (event.shiftKey || event.metaKey) {
-                const delta = Math.sign(event.deltaY) * 3;
+                const delta = Math.sign(event.deltaY) * 7;
                 fabricCanvas.relativePan(new fabric.Point(delta, 0));
             } else {
-                const delta = Math.sign(event.deltaY) * -3;
+                const delta = Math.sign(event.deltaY) * -7;
                 fabricCanvas.relativePan(new fabric.Point(0, delta));
             }
             event.preventDefault();
