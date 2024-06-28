@@ -916,7 +916,7 @@ const init = () => {
 
     function handleZoom(event, type) {
         event.preventDefault();
-        let zoomFactor = 0.2;
+        let zoomFactor = 0.1;
         zoom = fabricCanvas.getZoom();
         console.log("zoom factor :", zoom);
         type === "in" && (zoom += zoomFactor);
@@ -1009,10 +1009,10 @@ const init = () => {
             if (event.ctrlKey) return;
 
             if (event.shiftKey || event.metaKey) {
-                const delta = Math.sign(event.deltaY) * 30;
+                const delta = Math.sign(event.deltaY) * 3;
                 fabricCanvas.relativePan(new fabric.Point(delta, 0));
             } else {
-                const delta = Math.sign(event.deltaY) * -30;
+                const delta = Math.sign(event.deltaY) * -3;
                 fabricCanvas.relativePan(new fabric.Point(0, delta));
             }
             event.preventDefault();
