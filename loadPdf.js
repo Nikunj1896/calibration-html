@@ -701,6 +701,18 @@ const init = () => {
         }
     }
 
+    // Arrow on calibrate must be crosshair, not arrow. 
+    fabricCanvas.on("mouse:over", function () {
+        // fabricCanvas.defaultCursor = 'crosshair';
+        // console.log('isDrawing :>> ', calibrationMode);
+        if (calibrationMode || drawMode ) {
+            fabricCanvas.defaultCursor = 'crosshair';
+        } else {
+            fabricCanvas.defaultCursor = 'default';
+        }
+    })
+    
+
     fabricCanvas.on("mouse:up", function (o) {
         if (isAnyLineSelected) return;
         isDragging = false;
@@ -1003,16 +1015,37 @@ const init = () => {
     //* <--------- manage zoom on mouse and keyboard End <---------
 
     // * Event listeners for wheel event for panning
+
+    // document
+    // .addEventListener(
+    //     "wheel",
+    //     function (event) {
+    //         if (event.ctrlKey) return;
+
+    //         if (event.shiftKey || event.metaKey) {
+    //             const delta = Math.sign(event.deltaY) * 5;
+    //             fabricCanvas.relativePan(new fabric.Point(delta, 0));
+    //         } else {
+    //             const delta = Math.sign(event.deltaY) * -5;
+    //             fabricCanvas.relativePan(new fabric.Point(0, delta));
+    //         }
+    //         event.preventDefault();
+    //     },
+    //     { passive: false }
+    // );
+
+
+
+    // * Event listeners for wheel event for panning
     document.addEventListener(
         "wheel",
         function (event) {
             if (event.ctrlKey) return;
-
             if (event.shiftKey || event.metaKey) {
-                const delta = Math.sign(event.deltaY) * 7;
+                const delta = (Math.sign(event.deltaY) * 3) / currentPage;
                 fabricCanvas.relativePan(new fabric.Point(delta, 0));
             } else {
-                const delta = Math.sign(event.deltaY) * -7;
+                const delta = (Math.sign(event.deltaY) * -3) / currentPage;
                 fabricCanvas.relativePan(new fabric.Point(0, delta));
             }
             event.preventDefault();
@@ -1041,18 +1074,28 @@ const init = () => {
                 backgroundLayer.style.display = "block";
                 backgroundLayer.style.backgroundColor = "#3f85ef61";
 
+                setTimeout(() => {
+                    document.querySelector("#alert").style.display = "block";
+                }, 500);
+
                 // viewport button goes already after click on Calibration button 
 
                 setTimeout(() => {
                     const backgroundLayer = document.querySelector("#background-layer");
                     backgroundLayer.style.display = "none";
 
-                    document.querySelector("#alert").style.display = "block";
-                }, 2400);
+                    document.getElementById("chnageble").innerText = ' Viewport Cleared !'; 
+
+                }, 2000);
+
+                // setTimeout(() => {
+                    
+                    
+                // }, 3000);
 
                 setTimeout(() => {
                     document.querySelector("#alert").style.display = "none";
-                }, 4000);
+                } , 3000)
 
                 fabricCanvas.forEachObject(function (obj) {
                     obj.selectable = !drawMode;
@@ -1067,6 +1110,9 @@ const init = () => {
         .querySelector("#setCalibration-value-btn")
         .addEventListener("click", function () {
             realLineValueUnit = document.getElementById("realLengthUnitSelect").value;
+
+            document.querySelector("#calibration-btn").textContent = "re-calibration"
+            
 
             if (realLineValueUnit === "ftin") {
                 realLineValue = document.getElementById("realLineLengthValue").value;
