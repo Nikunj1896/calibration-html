@@ -989,6 +989,8 @@ const init = () => {
     document.addEventListener(
         "wheel",
         function (event) {
+            if(event.shiftKey)return;
+            
             if (event.ctrlKey && event.deltaY < 0) {
                 //* ctrl + Scroll UP (Zoom In)
                 handleZoom(event, "in");
@@ -1013,23 +1015,34 @@ const init = () => {
     //* <--------- manage zoom on mouse and keyboard End <---------
 
     // * Event listeners for wheel event for panning
-    document
-        .addEventListener(
-            "wheel",
-            function (event) {
-                if (event.ctrlKey) return;
+    let panX = 0;
+    let panY = 0;
 
-                if (event.shiftKey || event.metaKey) {
-                    const delta = Math.sign(event.deltaY) * 5;
-                    fabricCanvas.relativePan(new fabric.Point(delta, 0));
-                } else {
-                    const delta = Math.sign(event.deltaY) * -5;
-                    fabricCanvas.relativePan(new fabric.Point(0, delta));
-                }
-                event.preventDefault();
-            },
-            { passive: false }
-        );
+    // function resetPan() {
+    //     panX = 0;
+    //     panY = 0;
+    //     fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]); // reset to default
+    // }
+
+    document.addEventListener(
+        "wheel",
+        function (event) {
+         if (event.ctrlKey) return;
+
+            if (event.shiftKey || event.metaKey) {
+                const delta = Math.sign(event.deltaY) * 5;
+                panX += delta;
+            } else {
+                const delta = Math.sign(event.deltaY) * -5;
+                panY += delta;
+            }
+
+            fabricCanvas.setViewportTransform([1, 0, 0, 1, panX, panY]);
+            event.preventDefault();
+        },
+        { passive: false }
+    );
+
 
     // * Event listener for setting the page on it's default position with the default size
     document
