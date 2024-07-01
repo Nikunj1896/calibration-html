@@ -701,17 +701,15 @@ const init = () => {
         }
     }
 
-    // Arrow on calibrate must be crosshair, not arrow. 
     fabricCanvas.on("mouse:over", function () {
         // fabricCanvas.defaultCursor = 'crosshair';
         // console.log('isDrawing :>> ', calibrationMode);
-        if (calibrationMode || drawMode ) {
+        if (calibrationMode || drawMode) {
             fabricCanvas.defaultCursor = 'crosshair';
         } else {
             fabricCanvas.defaultCursor = 'default';
         }
     })
-    
 
     fabricCanvas.on("mouse:up", function (o) {
         if (isAnyLineSelected) return;
@@ -958,7 +956,7 @@ const init = () => {
         this.textContent = drawMode ? "Measure on" : "Measure";
 
         fabricCanvas.forEachObject(function (obj) {
-            obj.selectable = !drawMode;
+            obj.selectable = drawMode;
         });
     });
 
@@ -974,7 +972,7 @@ const init = () => {
             (event.ctrlKey && event.code === "NumpadSubtract")
         ) {
             handleZoom(event, "out");
-        } else if (event.key === "Delete" || event.key === "Backspace") {
+        } else if (event.key === "Delete" /*|| event.key === "Backspace"*/) {
             // Delete the selected object (line)
             const activeObject = fabricCanvas.getActiveObject();
             if (activeObject && activeObject.type === "line") {
@@ -991,10 +989,10 @@ const init = () => {
     document.addEventListener(
         "wheel",
         function (event) {
-            if (event.deltaY < 0 && event.ctrlKey) {
+            if (event.ctrlKey && event.deltaY < 0) {
                 //* ctrl + Scroll UP (Zoom In)
                 handleZoom(event, "in");
-            } else if (event.deltaY > 0 && event.ctrlKey) {
+            } else if (event.ctrlKey && event.deltaY > 0) {
                 //* ctrl + Scroll Down (Zoom Out)
                 handleZoom(event, "out");
             }
@@ -1015,43 +1013,54 @@ const init = () => {
     //* <--------- manage zoom on mouse and keyboard End <---------
 
     // * Event listeners for wheel event for panning
+    document
+        .addEventListener(
+            "wheel",
+            function (event) {
+                if (event.ctrlKey) return;
 
-    // document
-    // .addEventListener(
+                if (event.shiftKey || event.metaKey) {
+                    const delta = Math.sign(event.deltaY) * 5;
+                    fabricCanvas.relativePan(new fabric.Point(delta, 0));
+                } else {
+                    const delta = Math.sign(event.deltaY) * -5;
+                    fabricCanvas.relativePan(new fabric.Point(0, delta));
+                }
+                event.preventDefault();
+            },
+            { passive: false }
+        );
+
+    // * Event listener for setting the page on it's default position with the default size
+    document
+        .querySelector("#resetPagePosition")
+        .addEventListener("click", (e) => {
+            // console.log("resetPagePosition is clicked");
+            const viewportTransform = fabricCanvas.viewportTransform;
+            // for set the zooming size of the page
+            viewportTransform[0] = 1; // scaleX
+            viewportTransform[3] = 1; // scaleY
+            // for set the starting position of the page
+            viewportTransform[4] = 0;
+            viewportTransform[5] = 0;
+            fabricCanvas.setViewportTransform(viewportTransform);
+        })
+
+    // document.addEventListener(
     //     "wheel",
     //     function (event) {
     //         if (event.ctrlKey) return;
-
     //         if (event.shiftKey || event.metaKey) {
-    //             const delta = Math.sign(event.deltaY) * 5;
+    //             const delta = (Math.sign(event.deltaY) * 3) / totalPage;
     //             fabricCanvas.relativePan(new fabric.Point(delta, 0));
     //         } else {
-    //             const delta = Math.sign(event.deltaY) * -5;
+    //             const delta = (Math.sign(event.deltaY) * -3) / totalPage;
     //             fabricCanvas.relativePan(new fabric.Point(0, delta));
     //         }
     //         event.preventDefault();
     //     },
     //     { passive: false }
     // );
-
-
-
-    // * Event listeners for wheel event for panning
-    document.addEventListener(
-        "wheel",
-        function (event) {
-            if (event.ctrlKey) return;
-            if (event.shiftKey || event.metaKey) {
-                const delta = (Math.sign(event.deltaY) * 3) / currentPage;
-                fabricCanvas.relativePan(new fabric.Point(delta, 0));
-            } else {
-                const delta = (Math.sign(event.deltaY) * -3) / currentPage;
-                fabricCanvas.relativePan(new fabric.Point(0, delta));
-            }
-            event.preventDefault();
-        },
-        { passive: false }
-    );
 
     //* button event the set the calibration
     if (calibrationPoint === 1) {
@@ -1084,18 +1093,18 @@ const init = () => {
                     const backgroundLayer = document.querySelector("#background-layer");
                     backgroundLayer.style.display = "none";
 
-                    document.getElementById("chnageble").innerText = ' Viewport Cleared !'; 
+                    document.getElementById("chnageble").innerText = ' Viewport Cleared !';
 
                 }, 2000);
 
                 // setTimeout(() => {
-                    
-                    
+
+
                 // }, 3000);
 
                 setTimeout(() => {
                     document.querySelector("#alert").style.display = "none";
-                } , 3000)
+                }, 3000)
 
                 fabricCanvas.forEachObject(function (obj) {
                     obj.selectable = !drawMode;
@@ -1105,73 +1114,93 @@ const init = () => {
         alert("calibration point is already set");
     }
 
+    // set the calibration point method
+    function setCalibrationPoint() {
+        realLineValueUnit = document.getElementById("realLengthUnitSelect").value;
+
+        document.querySelector("#calibration-btn").textContent = "re-calibration"
+
+
+        if (realLineValueUnit === "ftin") {
+            realLineValue = document.getElementById("realLineLengthValue").value;
+            match = /^(\d+)'\-(\d+)"$/.exec(realLineValue); // 10'-00"
+            match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
+            match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
+            match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
+
+            match4 = /^(\d+)"$/.exec(realLineValue)  // 80"
+            match5 = /^(\d+)''$/.exec(realLineValue); // 80''
+
+            if (match) {
+                feet = parseInt(match[1], 10);
+                inches = parseInt(match[2], 10);
+                realLineValue = feet + "-" + inches;
+            } else if (match1) {
+                feet = parseInt(match1[1], 10);
+                inches = parseInt(match1[2], 10);
+                realLineValue = feet + "-" + inches;
+            } else if (match2) {
+                feet = parseInt(match2[1], 10);
+                inches = parseInt(match2[2], 10);
+                realLineValue = feet + "-" + inches;
+            } else if (match3) {
+                feet = parseInt(match3[1], 10);
+                inches = parseInt(match3[2], 10);
+                realLineValue = feet + "-" + inches;
+            } else if (match4) {
+                feet = parseInt(match4[1], 10);
+                inches = 0;
+                realLineValue = feet + "-" + inches;
+            } else if (match5) {
+                feet = parseInt(match5[1], 10)
+                inches = 0;
+                realLineValue = feet + "-" + inches;
+            } else {
+                alert("Value must be in the format 00'-00\" or 00'00\" ");
+                return;
+            }
+        } else {
+            realLineValue = document.getElementById("realLineLengthValue").value;
+        }
+
+        const realLineLengthValue = convertRealLineLength(
+            realLineValue,
+            realLineValueUnit
+        );
+        const pdfLineLengthValue = updateMinions(line);
+
+        countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
+
+        document.getElementById("myBox").style.display = "none";
+        document.getElementById("calibrateInputContainer").style.visibility = 'hidden';
+        document.getElementById("calibration-btn").style.backgroundColor =
+            "#EFEFEF";
+
+        resetCalibrationState();
+        removeLine(line);
+        fabricCanvas.discardActiveObject(line);
+    }
+
     //* Button event to set the calibration point
     document
         .querySelector("#setCalibration-value-btn")
         .addEventListener("click", function () {
-            realLineValueUnit = document.getElementById("realLengthUnitSelect").value;
+            setCalibrationPoint();
+        });
 
-            document.querySelector("#calibration-btn").textContent = "re-calibration"
-            
-
-            if (realLineValueUnit === "ftin") {
-                realLineValue = document.getElementById("realLineLengthValue").value;
-                match = /^(\d+)'\-(\d+)"$/.exec(realLineValue); // 10'-00"
-                match1 = /^(\d+)'\-(\d+)''$/.exec(realLineValue); // 10'-00''
-                match2 = /^(\d+)'(\d+)"$/.exec(realLineValue); // 10'00"
-                match3 = /^(\d+)'(\d+)''$/.exec(realLineValue); // 10'00''
-
-                match4 = /^(\d+)"$/.exec(realLineValue)  // 80"
-                match5 = /^(\d+)''$/.exec(realLineValue); // 80''
-
-                if (match) {
-                    feet = parseInt(match[1], 10);
-                    inches = parseInt(match[2], 10);
-                    realLineValue = feet + "-" + inches;
-                } else if (match1) {
-                    feet = parseInt(match1[1], 10);
-                    inches = parseInt(match1[2], 10);
-                    realLineValue = feet + "-" + inches;
-                } else if (match2) {
-                    feet = parseInt(match2[1], 10);
-                    inches = parseInt(match2[2], 10);
-                    realLineValue = feet + "-" + inches;
-                } else if (match3) {
-                    feet = parseInt(match3[1], 10);
-                    inches = parseInt(match3[2], 10);
-                    realLineValue = feet + "-" + inches;
-                } else if (match4) {
-                    feet = parseInt(match4[1], 10);
-                    inches = 0;
-                    realLineValue = feet + "-" + inches;
-                } else if (match5) {
-                    feet = parseInt(match5[1], 10)
-                    inches = 0;
-                    realLineValue = feet + "-" + inches;
-                } else {
-                    alert("Value must be in the format 00'-00\" or 00'00\" ");
-                    return;
-                }
-            } else {
-                realLineValue = document.getElementById("realLineLengthValue").value;
+    document
+        .querySelector("#realLineLengthValue")
+        .addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                setCalibrationPoint();
             }
+            // const realLineLengthValue = convertRealLineLength(
+            //     event.target.value,
+            //     realLineValueUnit
+            //     );
+            //     const pdfLineLengthValue = updateMinions(event.target.value);
+            //     countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
 
-            const realLineLengthValue = convertRealLineLength(
-                realLineValue,
-                realLineValueUnit
-            );
-            const pdfLineLengthValue = updateMinions(line);
-
-            countCalibrationPoint(pdfLineLengthValue, realLineLengthValue);
-
-            document.getElementById("myBox").style.display = "none";
-            document.getElementById("calibrateInputContainer").style.visibility = 'hidden';
-            document.getElementById("calibration-btn").style.backgroundColor =
-                "#EFEFEF";
-
-            resetCalibrationState();
-            removeLine(line);
-            fabricCanvas.discardActiveObject(line);
         });
 
     //* Button event the close the popup box
